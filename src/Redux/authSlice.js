@@ -41,6 +41,7 @@ export const registerAdmin = createAsyncThunk(
                 firstName,
                 lastName
             };
+            console.log('Registration payload:', payload);
 
             const response = await api.post(endpoint, payload);
             console.log('Registration response:', response.data)
@@ -61,8 +62,8 @@ export const registerAdmin = createAsyncThunk(
 
 export const loginAdmin = createAsyncThunk(
     "auth/login-admin",
-    async (data, thunkAPI) => {
-        const { email, password } = data;
+    async (credentials, { rejectWithValue }) => {
+        const { email, password } = credentials;
         try {
             const endpoint = '/admin/login'
             const payload = {
@@ -71,13 +72,13 @@ export const loginAdmin = createAsyncThunk(
             };
             const response = await api.post(endpoint, payload);
             console.log('Login response:', response.data)
-            return response.data.data;
+            return response.data.data || response.data;
         } catch (error) {
             if (error.response?.data?.errors) {
                 const firstError = error.response.data.errors[0];
-                return thunkAPI.rejectWithValue(firstError.message);
+                return rejectWithValue(firstError.message);
             }
-            return thunkAPI.rejectWithValue(
+            return rejectWithValue(
                 error.response?.data?.message || "Something went wrong"
             );
         }
@@ -150,7 +151,7 @@ const authSlice = createSlice({
                 state.status = "failed";
                 state.error = action.payload || "Failed to login";
             })
-            
+
             .addCase(resetPassword.pending, (state) => {
                 state.status = "loading";
                 state.error = "";

@@ -37,6 +37,21 @@ export const getPendingKYC = createAsyncThunk(
     }
 );
 
+// get verified runners
+export const getVerifiedRunners = createAsyncThunk(
+    "kyc/admin/getVerifiedRunners",
+    async (_, { rejectWithValue }) => {
+        try {
+            const response = await api.get("/admin/verified-runners");
+            return response.data;
+        } catch (error) {
+            return rejectWithValue(
+                error.response?.data?.message || "Failed to fetch verified runners"
+            );
+        }
+    }
+);
+
 // Get specific runner details
 export const getRunnerDetails = createAsyncThunk(
     "kyc/admin/getRunnerDetails",
@@ -119,20 +134,50 @@ export const rejectSelfie = createAsyncThunk(
     }
 );
 
-const kycSlice = createSlice({
-    name: "kyc",
+// helper function
+const updateRunnerAndMoveIfVerified = (state, runnerId, updatedStatus) => {
+    // Find runner in pendingRunners
+    const pendingIndex = state.pendingRunners.findIndex(r => r.id === runnerId);
+
+    if (pendingIndex !== -1) {
+        const runner = state.pendingRunners[pendingIndex];
+
+        // Update the runner's status
+        runner.runnerStatus = updatedStatus;
+
+        // Check if runner is fully approved
+        const isFullyApproved = updatedStatus === 'approved_full' ||
+            updatedStatus === 'approved_limited';
+
+        if (isFullyApproved) {
+            // Remove from pending and add to verified
+            const [verifiedRunner] = state.pendingRunners.splice(pendingIndex, 1);
+            state.verifiedRunners.push(verifiedRunner);
+            state.totalPending = state.pendingRunners.length;
+        }
+
+        // Update selectedRunner if it's the same
+        if (state.selectedRunner?.id === runnerId) {
+            state.selectedRunner.runnerStatus = updatedStatus;
+        }
+    }
+};
+
+const adminKycSlice = createSlice({
+    name: "adminKyc",
     initialState: {
-        status: "idle", 
+        status: "idle",
         error: "",
         message: "",
-        
+
         // Admin specific state
         pendingRunners: [],
+        verifiedRunners: [],
         selectedRunner: null,
         totalPending: 0,
-        
+
         // Action tracking
-        actionStatus: "idle", 
+        actionStatus: "idle",
         actionError: "",
         actionMessage: "",
     },
@@ -193,11 +238,9 @@ const kycSlice = createSlice({
             .addCase(approveDocument.fulfilled, (state, action) => {
                 state.actionStatus = "succeeded";
                 state.actionMessage = action.payload.message;
-                
-                // Update selectedRunner if present
-                if (state.selectedRunner) {
-                    state.selectedRunner.runnerStatus = action.payload.data.runnerStatus;
-                }
+
+                const { runnerId, updatedStatus } = action.payload.data;
+                updateRunnerAndMoveIfVerified(state, runnerId, updatedStatus);
             })
             .addCase(approveDocument.rejected, (state, action) => {
                 state.actionStatus = "failed";
@@ -213,11 +256,9 @@ const kycSlice = createSlice({
             .addCase(rejectDocument.fulfilled, (state, action) => {
                 state.actionStatus = "succeeded";
                 state.actionMessage = action.payload.message;
-                
-                // Update selectedRunner if present
-                if (state.selectedRunner) {
-                    state.selectedRunner.runnerStatus = action.payload.data.runnerStatus;
-                }
+
+                const { runnerId, updatedStatus } = action.payload.data;
+                updateRunnerAndMoveIfVerified(state, runnerId, updatedStatus);
             })
             .addCase(rejectDocument.rejected, (state, action) => {
                 state.actionStatus = "failed";
@@ -234,12 +275,9 @@ const kycSlice = createSlice({
             .addCase(approveSelfie.fulfilled, (state, action) => {
                 state.actionStatus = "succeeded";
                 state.actionMessage = action.payload.message;
-                
-                // Update selectedRunner if present
-                if (state.selectedRunner) {
-                    state.selectedRunner.runnerStatus = action.payload.data.runnerStatus;
-                    state.selectedRunner.isVerified = action.payload.data.isVerified;
-                }
+
+                const { runnerId, updatedStatus } = action.payload.data;
+                updateRunnerAndMoveIfVerified(state, runnerId, updatedStatus);
             })
             .addCase(approveSelfie.rejected, (state, action) => {
                 state.actionStatus = "failed";
@@ -255,15 +293,28 @@ const kycSlice = createSlice({
             .addCase(rejectSelfie.fulfilled, (state, action) => {
                 state.actionStatus = "succeeded";
                 state.actionMessage = action.payload.message;
-                
-                // Update selectedRunner if present
-                if (state.selectedRunner) {
-                    state.selectedRunner.runnerStatus = action.payload.data.runnerStatus;
-                }
+
+                const { runnerId, updatedStatus } = action.payload.data;
+                updateRunnerAndMoveIfVerified(state, runnerId, updatedStatus);
             })
             .addCase(rejectSelfie.rejected, (state, action) => {
                 state.actionStatus = "failed";
                 state.actionError = action.payload;
+            });
+
+
+        builder
+            .addCase(getVerifiedRunners.pending, (state) => {
+                state.status = "loading";
+                state.error = "";
+            })
+            .addCase(getVerifiedRunners.fulfilled, (state, action) => {
+                state.status = "succeeded";
+                state.verifiedRunners = action.payload.data.runners || [];
+            })
+            .addCase(getVerifiedRunners.rejected, (state, action) => {
+                state.status = "failed";
+                state.error = action.payload;
             });
     },
 });
@@ -272,6 +323,6 @@ export const {
     clearMessages,
     clearSelectedRunner,
     resetActionStatus,
-} = kycSlice.actions;
+} = adminKycSlice.actions;
 
-export default kycSlice.reducer;
+export default adminKycSlice.reducer;
