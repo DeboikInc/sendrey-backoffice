@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { loginAdmin, registerAdmin } from '../Redux/authSlice';
+import { adminLogin, registerAdmin } from '../Redux/authSlice';
 import { useNavigate } from "react-router-dom";
 
 const Login = () => {
@@ -28,7 +28,7 @@ const Login = () => {
         e.preventDefault();
 
         if (isLogin) {
-            const result = await dispatch(loginAdmin({
+            const result = await dispatch(adminLogin({
                 email: formData.email,
                 password: formData.password,
             }));

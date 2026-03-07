@@ -1,18 +1,17 @@
 import { configureStore } from '@reduxjs/toolkit';
-import authReducer, { injectStore as injectAuthStore } from '../Redux/authSlice';
-import adminKycReducer, {injectStore as injectKycStore} from '../Redux/kycSlice';
+import { injectStore } from '../utils/api'; 
+import { adminAuthReducer } from '../Redux/authSlice';
+import { kycAdminReducer } from '../Redux/kycSlice';
 
 
 const store = configureStore({
   reducer: {
-    auth: authReducer,
-    adminKyc: adminKycReducer,
+    auth: adminAuthReducer,
+    adminKyc: kycAdminReducer,
 
   },
 });
 
-// Inject the store so the axios interceptor can access it
-injectAuthStore(store);
-injectKycStore(store);
+injectStore(store);
 
 export default store;

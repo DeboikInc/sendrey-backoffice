@@ -7,7 +7,7 @@ import VerificationCard from '../components/VerificationCard';
 // Import admin KYC actions
 import {
     getPendingKYC,
-    getRunnerDetails,
+    getRunnerKYCDetails,
     approveDocument,
     rejectDocument,
     approveSelfie,
@@ -73,7 +73,7 @@ export default function KycDashboard() {
     // Handle reviewing a runner
     const handleReviewRunner = async (runner) => {
         setSelectedRunner(runner);
-        await dispatch(getRunnerDetails(runner.id));
+        await dispatch(getRunnerKYCDetails(runner.id));
     };
 
 
