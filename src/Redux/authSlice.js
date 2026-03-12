@@ -148,9 +148,13 @@ const adminAuthSlice = createSlice({
       .addCase(registerAdmin.pending, pending)
       .addCase(registerAdmin.fulfilled, (state, action) => {
         state.status = "succeeded";
-        state.isAuthenticated = true;
-        state.token = action.payload.token;
-        state.admin = action.payload.user;
+        if (action.payload?.token) {
+          state.isAuthenticated = true;
+          state.token = action.payload.token;
+        }
+        if (action.payload?.user) {
+          state.admin = action.payload.user;
+        }
       })
       .addCase(registerAdmin.rejected, rejected)
 

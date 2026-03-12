@@ -1,8 +1,6 @@
-// base interceptor
 import axios from "axios";
 const BASE_URL = process.env.REACT_APP_ADMIN_API_URL;
 
-// Create the base axios instance
 const api = axios.create({
     baseURL: BASE_URL,
     headers: {
@@ -12,44 +10,24 @@ const api = axios.create({
     withCredentials: true,
 });
 
-// Response interceptor - extracts data from BaseController responses
+// Response interceptor only — 2 args
 api.interceptors.response.use(
     (response) => {
-        // Extract data from { success: true, message: "...", data: {...} }
         if (response.data && response.data.data !== undefined) {
             response.data = response.data.data;
         }
         return response;
-    },
-
-    (config) => {
-        const state = store?.getState()?.auth;
-        const token = state?.token;
-        const role = state?.role; // 'admin' | 'super-admin'
-
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-
-        if (role) {
-            config.headers['X-Admin-Role'] = role;
-        }
-
-        return config;
     },
     (error) => {
         return Promise.reject(error);
     }
 );
 
-// Store reference for request interceptor
 let store;
 
-// Function to inject store once
 export const injectStore = (_store) => {
     store = _store;
 
-    // Request interceptor - adds auth token
     api.interceptors.request.use(
         (config) => {
             const token = store?.getState()?.auth?.token;
@@ -58,9 +36,7 @@ export const injectStore = (_store) => {
             }
             return config;
         },
-        (error) => {
-            return Promise.reject(error);
-        }
+        (error) => Promise.reject(error)
     );
 };
 
