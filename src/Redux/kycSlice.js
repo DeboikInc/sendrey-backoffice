@@ -89,7 +89,7 @@ export const getVerifiedRunners = createAsyncThunk(
     "kycAdmin/getVerifiedRunners",
     async (_, thunkAPI) => {
         try {
-            const response = await api.get("    /kyc/verified-runners");
+            const response = await api.get("/kyc/verified-runners");
             return response.data;
         } catch (error) {
             return thunkAPI.rejectWithValue(
@@ -99,13 +99,16 @@ export const getVerifiedRunners = createAsyncThunk(
     }
 );
 
+const updateRunner = (runners, runnerId, patch) =>
+    runners.map(r => (r._id === runnerId || r.id === runnerId) ? { ...r, ...patch } : r);
 
 const kycAdminSlice = createSlice({
     name: "kycAdmin",
     initialState: {
         status: "idle",
         error: "",
-        pendingKYC: [],
+        pendingRunners: [],
+        totalPending: 0,
         verifiedRunners: [],
         selectedRunner: null,
     },
@@ -115,129 +118,80 @@ const kycAdminSlice = createSlice({
         },
     },
     extraReducers: (builder) => {
+        const pending = (state) => { state.status = "loading"; state.error = ""; };
+        const rejected = (state, action) => {
+            state.status = "failed";
+            state.error = action.payload || action.error?.message || "Something went wrong";
+        };
+
         builder
-            .addCase(getPendingKYC.pending, (state) => {
-                state.status = "loading";
-                state.error = "";
-            })
+            .addCase(getPendingKYC.pending, pending)
             .addCase(getPendingKYC.fulfilled, (state, action) => {
                 state.status = "succeeded";
-                state.pendingKYC = action.payload.data || action.payload;
+                const data = action.payload?.data || action.payload;
+                state.pendingRunners = Array.isArray(data) ? data : [];
+                state.totalPending = state.pendingRunners.length;
             })
-            .addCase(getPendingKYC.rejected, (state, action) => {
-                state.status = "failed";
-                state.error = action.payload?.message || action.error?.message || "Failed to fetch pending KYC";
-            })
+            .addCase(getPendingKYC.rejected, rejected)
 
-            .addCase(getRunnerKYCDetails.pending, (state) => {
-                state.status = "loading";
-                state.error = "";
-            })
+            .addCase(getRunnerKYCDetails.pending, pending)
             .addCase(getRunnerKYCDetails.fulfilled, (state, action) => {
                 state.status = "succeeded";
-                state.selectedRunner = action.payload.data || action.payload;
+                state.selectedRunner = action.payload?.data || action.payload;
             })
-            .addCase(getRunnerKYCDetails.rejected, (state, action) => {
-                state.status = "failed";
-                state.error = action.payload?.message || action.error?.message || "Failed to fetch runner details";
-            })
+            .addCase(getRunnerKYCDetails.rejected, rejected)
 
-            .addCase(approveDocument.pending, (state) => {
-                state.status = "loading";
-                state.error = "";
-            })
+            .addCase(approveDocument.pending, pending)
             .addCase(approveDocument.fulfilled, (state, action) => {
                 state.status = "succeeded";
                 const { runnerId } = action.payload;
-                state.pendingKYC = state.pendingKYC.map(r =>
-                    (r._id === runnerId || r.id === runnerId)
-                        ? { ...r, documentStatus: "approved" }
-                        : r
-                );
+                state.pendingRunners = updateRunner(state.pendingRunners, runnerId, { documentStatus: "approved" });
                 if (state.selectedRunner?._id === runnerId || state.selectedRunner?.id === runnerId) {
                     state.selectedRunner = { ...state.selectedRunner, documentStatus: "approved" };
                 }
             })
-            .addCase(approveDocument.rejected, (state, action) => {
-                state.status = "failed";
-                state.error = action.payload?.message || action.error?.message || "Failed to approve document";
-            })
+            .addCase(approveDocument.rejected, rejected)
 
-            .addCase(rejectDocument.pending, (state) => {
-                state.status = "loading";
-                state.error = "";
-            })
+            .addCase(rejectDocument.pending, pending)
             .addCase(rejectDocument.fulfilled, (state, action) => {
                 state.status = "succeeded";
                 const { runnerId } = action.payload;
-                state.pendingKYC = state.pendingKYC.map(r =>
-                    (r._id === runnerId || r.id === runnerId)
-                        ? { ...r, documentStatus: "rejected" }
-                        : r
-                );
+                state.pendingRunners = updateRunner(state.pendingRunners, runnerId, { documentStatus: "rejected" });
                 if (state.selectedRunner?._id === runnerId || state.selectedRunner?.id === runnerId) {
                     state.selectedRunner = { ...state.selectedRunner, documentStatus: "rejected" };
                 }
             })
-            .addCase(rejectDocument.rejected, (state, action) => {
-                state.status = "failed";
-                state.error = action.payload?.message || action.error?.message || "Failed to reject document";
-            })
+            .addCase(rejectDocument.rejected, rejected)
 
-            .addCase(approveSelfie.pending, (state) => {
-                state.status = "loading";
-                state.error = "";
-            })
+            .addCase(approveSelfie.pending, pending)
             .addCase(approveSelfie.fulfilled, (state, action) => {
                 state.status = "succeeded";
                 const { runnerId } = action.payload;
-                state.pendingKYC = state.pendingKYC.map(r =>
-                    (r._id === runnerId || r.id === runnerId)
-                        ? { ...r, selfieStatus: "approved" }
-                        : r
-                );
+                state.pendingRunners = updateRunner(state.pendingRunners, runnerId, { selfieStatus: "approved" });
                 if (state.selectedRunner?._id === runnerId || state.selectedRunner?.id === runnerId) {
                     state.selectedRunner = { ...state.selectedRunner, selfieStatus: "approved" };
                 }
             })
-            .addCase(approveSelfie.rejected, (state, action) => {
-                state.status = "failed";
-                state.error = action.payload?.message || action.error?.message || "Failed to approve selfie";
-            })
+            .addCase(approveSelfie.rejected, rejected)
 
-            .addCase(rejectSelfie.pending, (state) => {
-                state.status = "loading";
-                state.error = "";
-            })
+            .addCase(rejectSelfie.pending, pending)
             .addCase(rejectSelfie.fulfilled, (state, action) => {
                 state.status = "succeeded";
                 const { runnerId } = action.payload;
-                state.pendingKYC = state.pendingKYC.map(r =>
-                    (r._id === runnerId || r.id === runnerId)
-                        ? { ...r, selfieStatus: "rejected" }
-                        : r
-                );
+                state.pendingRunners = updateRunner(state.pendingRunners, runnerId, { selfieStatus: "rejected" });
                 if (state.selectedRunner?._id === runnerId || state.selectedRunner?.id === runnerId) {
                     state.selectedRunner = { ...state.selectedRunner, selfieStatus: "rejected" };
                 }
             })
-            .addCase(rejectSelfie.rejected, (state, action) => {
-                state.status = "failed";
-                state.error = action.payload?.message || action.error?.message || "Failed to reject selfie";
-            })
+            .addCase(rejectSelfie.rejected, rejected)
 
-            .addCase(getVerifiedRunners.pending, (state) => {
-                state.status = "loading";
-                state.error = "";
-            })
+            .addCase(getVerifiedRunners.pending, pending)
             .addCase(getVerifiedRunners.fulfilled, (state, action) => {
                 state.status = "succeeded";
-                state.verifiedRunners = action.payload.data || action.payload;
+                const data = action.payload?.data || action.payload;
+                state.verifiedRunners = Array.isArray(data) ? data : [];
             })
-            .addCase(getVerifiedRunners.rejected, (state, action) => {
-                state.status = "failed";
-                state.error = action.payload?.message || action.error?.message || "Failed to fetch verified runners";
-            });
+            .addCase(getVerifiedRunners.rejected, rejected);
     },
 });
 

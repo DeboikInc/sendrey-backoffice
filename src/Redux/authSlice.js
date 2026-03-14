@@ -5,8 +5,8 @@ export const registerAdmin = createAsyncThunk(
   "adminAuth/register",
   async ({ email, firstName, lastName, password, role = "admin", }, thunkAPI) => {
     try {
-      const response = await api.post("/auth/register", {
-        email, firstName, lastName, password, role,
+      const response = await api.post("/auth/register-admin", {
+        email, firstName, lastName, password, role: 'admin',
       });
       return response.data;
     } catch (error) {

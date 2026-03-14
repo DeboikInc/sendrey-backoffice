@@ -1,6 +1,7 @@
 import { Routes, Route, } from "react-router-dom";
-import KycDashboard from "./page/home";
-import Login from "./page/login";
+import Home from "./page/home";
+import Login from "./page/auth/login";
+import Register from "./page/auth/register";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 
@@ -8,8 +9,9 @@ export default function AppRoutes() {
     return (
         <Routes>
             <Route path="/" element={<Login />} />
+            <Route path="/reg-admin" element={<Register />} />
             <Route element={<ProtectedRoute />}>
-                <Route path="/app/sendrey" element={<KycDashboard />} />
+                <Route path="/home-admin" element={<Home />} />
                 {/* Add more protected routes here */}
             </Route>
         </Routes>

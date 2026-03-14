@@ -31,6 +31,7 @@ export const injectStore = (_store) => {
     api.interceptors.request.use(
         (config) => {
             const token = store?.getState()?.auth?.token;
+            console.log('Request token:', token ? 'token exist' : 'no token');
             if (token) {
                 config.headers.Authorization = `Bearer ${token}`;
             }
