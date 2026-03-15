@@ -1,7 +1,7 @@
 import React from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { ShieldCheck, AlertTriangle, Briefcase, Users, LogOut, LayoutDashboard } from 'lucide-react';
+import { ShieldCheck, AlertTriangle, Briefcase, Users, LogOut, LayoutDashboard, Package,CreditCard } from 'lucide-react';
 import { adminLogout } from '../Redux/authSlice';
 
 const NAV_ITEMS = [
@@ -9,6 +9,10 @@ const NAV_ITEMS = [
     { label: 'KYC', key: 'kyc', icon: ShieldCheck },
     { label: 'Disputes', key: 'disputes', icon: AlertTriangle },
     { label: 'Business Users', key: 'business-users', icon: Briefcase },
+    { label: 'Users ', key: 'users', icon: Users },
+    { label: 'Runners', key: 'runner-list', icon: Users },
+    { label: 'Order', key: 'orders', icon: Package },
+    { label: 'Payouts', key: 'payout', icon: CreditCard },
 ];
 
 export default function Sidebar({ activePage, onNavigate }) {

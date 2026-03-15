@@ -1,26 +1,30 @@
 import React, { useState } from 'react';
-import Sidebar from '../components/Sidebar';
+import Sidebar from '../components/sidebar';
 
 // ── Import pages as you build them ──────────────────────────────────────────
 import KycDashboard from '../components/KycDashboard';
-// import Disputes from '../components/Disputes';
-// import BusinessUsers from '../components/BusinessUsers';
-// import Dashboard from './Dashboard';
+import Disputes from './DisputeCenter';
+ import BusinessUsers from './BusinessUsers';
+ import DashBoard from './DashBoard';
+ import RunnersList from './RunnerList';
+ import UsersList from './UserList';
+ import OrdersList from './OrdersList';
+ import PayoutManagement from './PayoutManagement';
 
-const Placeholder = ({ title }) => (
-    <div className="flex flex-col items-center justify-center h-full text-center">
-        <p className="text-xs font-bold uppercase tracking-[0.3em] text-primary mb-2">{title}</p>
-        <h2 className="text-2xl font-black text-white">{title}</h2>
-        <p className="text-gray-500 text-sm mt-2">This section is under construction.</p>
-    </div>
-);
+ 
+
+
 
 // ── Add pages here as you build them 
 const PAGES = {
-    'dashboard':      <Placeholder title="Dashboard" />,
+    'dashboard':      <DashBoard title="Dashboard" />,
     'kyc':            <KycDashboard title="KYC"/>,
-    'disputes':       <Placeholder title="Disputes" />,
-    'business-users': <Placeholder title="Business Users" />,
+    'disputes':       <Disputes title="Disputes" />,
+    'business-users': <BusinessUsers title="Business Users" />,
+    'runner-list':    <RunnersList title="Runner List"/>,
+    'users':       <UsersList title="User List" />,
+    'orders':           <OrdersList title="Order List" />,
+    'payout':         <PayoutManagement title="Payout List" />
 };
 
 export default function Home() {
