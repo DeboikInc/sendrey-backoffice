@@ -1,4 +1,4 @@
-import  { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { listUsers, exportUsers, updateUserStatus, bulkUserAction, deleteUser } from '../Redux/usersSlice';
 import { Download, Ban, Trash2, CheckCircle, UserX, RefreshCw } from 'lucide-react';
@@ -6,20 +6,18 @@ import { Download, Ban, Trash2, CheckCircle, UserX, RefreshCw } from 'lucide-rea
 export default function UsersList() {
     const dispatch = useDispatch();
     const { list: rawList, loading = false, error = null } = useSelector(state => state.users || {});
-const list = Array.isArray(rawList) ? rawList : [];
-
+    const list = Array.isArray(rawList) ? rawList : [];
 
     const [selectedIds, setSelectedIds] = useState([]);
-    const [refreshing, setRefreshing] = useState(false);  // ← local refresh state
+    const [refreshing, setRefreshing] = useState(false);
 
     useEffect(() => {
         dispatch(listUsers());
     }, [dispatch]);
 
-    // ── Refresh handler (mirrors KYC handleRefresh) ──────────────────────────
     const handleRefresh = async () => {
         setRefreshing(true);
-        setSelectedIds([]);                   // ← clear selections on refresh
+        setSelectedIds([]);
         try {
             await dispatch(listUsers());
         } finally {
@@ -48,7 +46,6 @@ const list = Array.isArray(rawList) ? rawList : [];
                     <h1 className="text-2xl font-black italic">USER ACCOUNTS</h1>
                     <p className="text-gray-400 text-sm">Manage and moderate customer accounts</p>
 
-                    {/* Refresh button (mirrors KYC pattern) */}
                     <div className="flex items-center gap-3 mt-5">
                         <button
                             onClick={handleRefresh}
@@ -69,7 +66,7 @@ const list = Array.isArray(rawList) ? rawList : [];
                 </button>
             </div>
 
-            {/* ── Error Banner (mirrors KYC error block) ──────────────────────── */}
+            {/* ── Error Banner ────────────────────────────────────────────────── */}
             {error && (
                 <div className="bg-red-500/20 border border-red-500 text-red-300 px-4 py-3 rounded-lg">
                     Error: {error}
@@ -105,8 +102,9 @@ const list = Array.isArray(rawList) ? rawList : [];
                             <th className="p-4 w-10">
                                 <input
                                     type="checkbox"
+                                    // ✅ Select-all uses _id
                                     checked={selectedIds.length === list.length && list.length > 0}
-                                    onChange={(e) => setSelectedIds(e.target.checked ? list.map(u => u.id) : [])}
+                                    onChange={(e) => setSelectedIds(e.target.checked ? list.map(u => u._id) : [])}
                                     className="accent-primary"
                                 />
                             </th>
@@ -118,14 +116,14 @@ const list = Array.isArray(rawList) ? rawList : [];
                     <tbody className="divide-y divide-white/5">
                         {list.map(user => (
                             <tr
-                                key={user.id}
-                                className={`hover:bg-white/5 transition ${selectedIds.includes(user.id) ? 'bg-primary/5' : ''}`}
+                                key={user._id}  // ✅ _id
+                                className={`hover:bg-white/5 transition ${selectedIds.includes(user._id) ? 'bg-primary/5' : ''}`}
                             >
                                 <td className="p-4">
                                     <input
                                         type="checkbox"
-                                        checked={selectedIds.includes(user.id)}
-                                        onChange={() => handleSelect(user.id)}
+                                        checked={selectedIds.includes(user._id)}  // ✅ _id
+                                        onChange={() => handleSelect(user._id)}   // ✅ _id
                                         className="accent-primary"
                                     />
                                 </td>
@@ -145,7 +143,7 @@ const list = Array.isArray(rawList) ? rawList : [];
                                 <td className="p-4">
                                     <button
                                         onClick={() => dispatch(updateUserStatus({
-                                            userId: user.id,
+                                            userId: user._id,  // ✅ _id
                                             status: user.status === 'Active' ? 'Suspended' : 'Active'
                                         }))}
                                         className="text-gray-400 hover:text-white mr-4 transition-colors"
@@ -153,7 +151,7 @@ const list = Array.isArray(rawList) ? rawList : [];
                                         {user.status === 'Active' ? <UserX size={18} /> : <CheckCircle size={18} />}
                                     </button>
                                     <button
-                                        onClick={() => dispatch(deleteUser(user.id))}
+                                        onClick={() => dispatch(deleteUser(user._id))}  // ✅ _id
                                         className="text-gray-400 hover:text-red-500 transition-colors"
                                     >
                                         <Trash2 size={18} />

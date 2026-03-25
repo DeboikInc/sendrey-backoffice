@@ -22,7 +22,7 @@ export const getDispute = createAsyncThunk('dispute/getOne', async (orderId, { r
 export const resolveDispute = createAsyncThunk('dispute/resolve', async ({ disputeId, resolutionData }, { rejectWithValue }) => {
     try {
         const response = await api.patch(`/dispute/${disputeId}/resolve`, resolutionData);
-        return response.data; // Expecting updated dispute object
+        return response.data;
     } catch (err) {
         return rejectWithValue(err.response.data);
     }
@@ -30,14 +30,33 @@ export const resolveDispute = createAsyncThunk('dispute/resolve', async ({ dispu
 
 const disputeSlice = createSlice({
     name: 'dispute',
-    initialState: { list: [], currentDispute: null, loading: false },
+    initialState: {
+        list: [],
+        count: 0,
+        currentDispute: null,
+        loading: false,
+        error: null,
+    },
     extraReducers: (builder) => {
         builder
-            .addCase(getAllDisputes.fulfilled, (state, action) => { state.list = action.payload; })
-            .addCase(getDispute.fulfilled, (state, action) => { state.currentDispute = action.payload; })
+            .addCase(getAllDisputes.pending, (state) => { state.loading = true; })
+            .addCase(getAllDisputes.fulfilled, (state, action) => {
+                state.loading = false;
+                state.list = action.payload.disputes;  // ✅ unwrap { disputes: [], count: 0 }
+                state.count = action.payload.count;
+            })
+            .addCase(getAllDisputes.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;
+            })
+            .addCase(getDispute.fulfilled, (state, action) => {
+                state.currentDispute = action.payload.dispute; // ✅ unwrap { dispute: {} }
+            })
             .addCase(resolveDispute.fulfilled, (state, action) => {
-                const index = state.list.findIndex(d => d.id === action.payload.id);
-                if (index !== -1) state.list[index] = action.payload;
+                const updated = action.payload.dispute; // ✅ unwrap
+                // ✅ MongoDB uses _id, not id
+                const index = state.list.findIndex(d => d._id === updated._id);
+                if (index !== -1) state.list[index] = updated;
             });
     }
 });

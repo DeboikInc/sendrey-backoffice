@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Sidebar from '../components/sidebar';
 
 // ── Import pages as you build them ──────────────────────────────────────────
-import KycDashboard from '../components/KycDashboard';
+//import KycDashboard from '../components/KycDashboard';
 import Disputes from './DisputeCenter';
  import BusinessUsers from './BusinessUsers';
  import DashBoard from './DashBoard';
@@ -18,7 +18,6 @@ import Disputes from './DisputeCenter';
 // ── Add pages here as you build them 
 const PAGES = {
     'dashboard':      <DashBoard title="Dashboard" />,
-    'kyc':            <KycDashboard title="KYC"/>,
     'disputes':       <Disputes title="Disputes" />,
     'business-users': <BusinessUsers title="Business Users" />,
     'runner-list':    <RunnersList title="Runner List"/>,

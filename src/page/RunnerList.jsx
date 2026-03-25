@@ -27,15 +27,16 @@ const list = Array.isArray(rawList) ? rawList : [];
         }
     };
 
-    const delayedSearch = useCallback(
-        debounce((q) => dispatch(searchRunners(q)), 500),
-        []
-    );
+   
 
     const handleSearch = (e) => {
         setSearchTerm(e.target.value);
         delayedSearch(e.target.value);
     };
+     const delayedSearch = useCallback(
+        debounce((q) => dispatch(searchRunners(q)), 500),
+        [handleSearch]
+    );
 
     const handleToggleStatus = (id, currentStatus) => {
         const newStatus = currentStatus === 'Active' ? 'Suspended' : 'Active';
