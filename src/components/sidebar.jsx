@@ -1,70 +1,93 @@
 import React from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { ShieldCheck, AlertTriangle, Briefcase, Users, LogOut, LayoutDashboard, Package,CreditCard } from 'lucide-react';
+import {
+  AlertTriangle, Briefcase, Users, LogOut,
+  LayoutDashboard, Package, CreditCard, X, ShieldCheck
+} from 'lucide-react';
 import { adminLogout } from '../Redux/authSlice';
-import logo from "../assets/Sendrey-Logo-Variants-09.png"
+import logo from '../assets/Sendrey-Logo-Variants-09.png';
+
 const NAV_ITEMS = [
-    { label: 'Dashboard', key: 'dashboard', icon: LayoutDashboard },
-    { label: 'Disputes', key: 'disputes', icon: AlertTriangle },
-    { label: 'Business Users', key: 'business-users', icon: Briefcase },
-    { label: 'Users ', key: 'users', icon: Users },
-    { label: 'Runners', key: 'runner-list', icon: Users },
-    { label: 'Order', key: 'orders', icon: Package },
-    { label: 'Payouts', key: 'payout', icon: CreditCard },
+  { label: 'Dashboard',      key: 'dashboard',     icon: LayoutDashboard },
+  { label: 'Disputes',       key: 'disputes',       icon: AlertTriangle },
+  { label: 'Business Users', key: 'business-users', icon: Briefcase },
+  { label: 'Users',          key: 'users',          icon: Users },
+  { label: 'Runners',        key: 'runner-list',    icon: Users },
+  { label: 'Orders',         key: 'orders',         icon: Package },
+  { label: 'Payouts',        key: 'payout',         icon: CreditCard },
 ];
 
-export default function Sidebar({ activePage, onNavigate }) {
-    const dispatch = useDispatch();
-    const navigate = useNavigate();
+export default function Sidebar({ activePage, onNavigate, open, onClose }) {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
 
-    const handleLogout = async () => {
-        await dispatch(adminLogout());
-        navigate('/');
-    };
+  const handleLogout = async () => {
+    await dispatch(adminLogout());
+    navigate('/');
+  };
 
-    return (
-        <aside className="h-screen w-64 flex-shrink-0 flex flex-col bg-black-200 border-r border-white/5">
+  const handleNav = (key) => {
+    onNavigate(key);
+    onClose?.();
+  };
 
-            {/* Brand */}
-            <div className="px-6 py-2 border-white/5">
-      <img src={logo}alt='sendrey logo' className='w-2/3 m-2'  ></img>
-                <p className="text-xs font-bold uppercase tracking-[0.3em] text-primary">Admin</p>
-            </div>
+  return (
+    <>
+      {open && (
+        <div
+          className="fixed inset-0 z-40 bg-black/60 lg:hidden"
+          onClick={onClose}
+        />
+      )}
 
-            {/* Nav */}
-            <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-                {NAV_ITEMS.map((item) => {
-                    const Icon = item.icon;
-                    const isActive = activePage === item.key;
+      <aside className={`
+        fixed inset-y-0 left-0 z-50 w-64 flex flex-col bg-navy border-r border-white/5
+        transform transition-transform duration-300 ease-in-out
+        ${open ? 'translate-x-0' : '-translate-x-full'}
+        lg:relative lg:translate-x-0 lg:flex lg:z-auto
+      `}>
+        <div className="px-5 pt-4 pb-3 border-b border-white/5 flex items-center justify-between">
+          <div>
+            <img src={logo} alt="sendrey logo" className="w-2/3 mb-1" />
+            <p className="text-xs font-bold uppercase tracking-[0.3em] text-orange">Admin</p>
+          </div>
+          <button onClick={onClose} className="lg:hidden p-1.5 rounded-lg text-white/40 hover:text-white transition-colors">
+            <X size={18} />
+          </button>
+        </div>
 
-                    return (
-                        <button
-                            key={item.key}
-                            onClick={() => onNavigate(item.key)}
-                            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all
-                                ${isActive
-                                    ? 'bg-primary text-white'
-                                    : 'text-gray-500 hover:bg-white/5 hover:text-white'
-                                }`}
-                        >
-                            <Icon size={18} />
-                            {item.label}
-                        </button>
-                    );
-                })}
-            </nav>
+        <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+          {NAV_ITEMS.map((item) => {
+            const Icon = item.icon;
+            const isActive = activePage === item.key;
+            return (
+              <button
+                key={item.key}
+                onClick={() => handleNav(item.key)}
+                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all
+                  ${isActive
+                    ? 'bg-orange text-white'
+                    : 'text-white/50 hover:bg-white/5 hover:text-white'
+                  }`}
+              >
+                <Icon size={17} />
+                {item.label}
+              </button>
+            );
+          })}
+        </nav>
 
-            {/* Logout */}
-            <div className="px-3 py-4 border-t border-white/5">
-                <button
-                    onClick={handleLogout}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-red-400 hover:bg-red-500/10 transition-all"
-                >
-                    <LogOut size={18} />
-                    Logout
-                </button>
-            </div>
-        </aside>
-    );
+        <div className="px-3 py-4 border-t border-white/5">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-crimson/80 hover:bg-crimson/20 hover:text-crimson transition-all"
+          >
+            <LogOut size={17} />
+            Logout
+          </button>
+        </div>
+      </aside>
+    </>
+  );
 }

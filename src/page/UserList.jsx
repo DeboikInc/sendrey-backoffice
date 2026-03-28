@@ -1,181 +1,176 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { listUsers, exportUsers, updateUserStatus, bulkUserAction, deleteUser } from '../Redux/usersSlice';
-import { Download, Ban, Trash2, CheckCircle, UserX, RefreshCw } from 'lucide-react';
+import { Download, Ban, Trash2, CheckCircle, UserX, RefreshCw, AlertTriangle } from 'lucide-react';
 
 export default function UsersList() {
-    const dispatch = useDispatch();
-    const { list: rawList, loading = false, error = null } = useSelector(state => state.users || {});
-    const list = Array.isArray(rawList) ? rawList : [];
+  const dispatch = useDispatch();
+  const { list: rawList, loading = false, error = null } = useSelector(state => state.users || {});
+  const list = Array.isArray(rawList) ? rawList : [];
 
-    const [selectedIds, setSelectedIds] = useState([]);
-    const [refreshing, setRefreshing] = useState(false);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [refreshing, setRefreshing]   = useState(false);
 
-    useEffect(() => {
-        dispatch(listUsers());
-    }, [dispatch]);
+  useEffect(() => {
+    dispatch(listUsers());
+  }, [dispatch]);
 
-    const handleRefresh = async () => {
-        setRefreshing(true);
-        setSelectedIds([]);
-        try {
-            await dispatch(listUsers());
-        } finally {
-            setRefreshing(false);
-        }
-    };
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    setSelectedIds([]);
+    try {
+      await dispatch(listUsers());
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
-    const handleSelect = (id) => {
-        setSelectedIds(prev =>
-            prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-        );
-    };
-
-    const handleBulkAction = (action) => {
-        if (window.confirm(`Perform ${action} on ${selectedIds.length} users?`)) {
-            dispatch(bulkUserAction({ userIds: selectedIds, action }));
-            setSelectedIds([]);
-        }
-    };
-
-    return (
-        <div className="space-y-6">
-            {/* ── Header ─────────────────────────────────────────────────────── */}
-            <div className="flex justify-between items-end">
-                <div>
-                    <h1 className="text-2xl font-black italic">USER ACCOUNTS</h1>
-                    <p className="text-gray-400 text-sm">Manage and moderate customer accounts</p>
-
-                    <div className="flex items-center gap-3 mt-5">
-                        <button
-                            onClick={handleRefresh}
-                            disabled={refreshing || loading}
-                            className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/80 rounded-lg text-sm font-bold disabled:opacity-50"
-                        >
-                            <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''} />
-                            {refreshing ? 'Refreshing...' : 'Refresh'}
-                        </button>
-                    </div>
-                </div>
-
-                <button
-                    onClick={() => dispatch(exportUsers())}
-                    className="flex items-center gap-2 bg-primary px-4 py-2 rounded-xl text-sm font-bold hover:opacity-90 transition"
-                >
-                    <Download size={16} /> Export CSV
-                </button>
-            </div>
-
-            {/* ── Error Banner ────────────────────────────────────────────────── */}
-            {error && (
-                <div className="bg-red-500/20 border border-red-500 text-red-300 px-4 py-3 rounded-lg">
-                    Error: {error}
-                </div>
-            )}
-
-            {/* ── Bulk Action Bar ─────────────────────────────────────────────── */}
-            {selectedIds.length > 0 && (
-                <div className="bg-primary/20 border border-primary/40 p-3 rounded-xl flex justify-between items-center animate-in fade-in slide-in-from-top-2">
-                    <span className="text-sm font-bold ml-2">{selectedIds.length} users selected</span>
-                    <div className="flex gap-2">
-                        <button
-                            onClick={() => handleBulkAction('suspend')}
-                            className="flex items-center gap-1 bg-black-200 px-3 py-1.5 rounded-lg text-xs font-bold text-orange-400"
-                        >
-                            <Ban size={14} /> Suspend
-                        </button>
-                        <button
-                            onClick={() => handleBulkAction('delete')}
-                            className="flex items-center gap-1 bg-red-500 px-3 py-1.5 rounded-lg text-xs font-bold text-white"
-                        >
-                            <Trash2 size={14} /> Delete
-                        </button>
-                    </div>
-                </div>
-            )}
-
-            {/* ── Table ───────────────────────────────────────────────────────── */}
-            <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
-                <table className="w-full text-left text-sm">
-                    <thead className="bg-white/5 text-[10px] uppercase text-gray-500 font-black border-b border-white/5">
-                        <tr>
-                            <th className="p-4 w-10">
-                                <input
-                                    type="checkbox"
-                                    // ✅ Select-all uses _id
-                                    checked={selectedIds.length === list.length && list.length > 0}
-                                    onChange={(e) => setSelectedIds(e.target.checked ? list.map(u => u._id) : [])}
-                                    className="accent-primary"
-                                />
-                            </th>
-                            <th className="p-4">Customer</th>
-                            <th className="p-4">Account Status</th>
-                            <th className="p-4">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/5">
-                        {list.map(user => (
-                            <tr
-                                key={user._id}  // ✅ _id
-                                className={`hover:bg-white/5 transition ${selectedIds.includes(user._id) ? 'bg-primary/5' : ''}`}
-                            >
-                                <td className="p-4">
-                                    <input
-                                        type="checkbox"
-                                        checked={selectedIds.includes(user._id)}  // ✅ _id
-                                        onChange={() => handleSelect(user._id)}   // ✅ _id
-                                        className="accent-primary"
-                                    />
-                                </td>
-                                <td className="p-4">
-                                    <div className="font-bold">{user.name}</div>
-                                    <div className="text-xs text-gray-500">{user.email}</div>
-                                </td>
-                                <td className="p-4">
-                                    <span className={`px-2 py-1 rounded text-[10px] font-black uppercase ${
-                                        user.status === 'Active'
-                                            ? 'text-green-400 bg-green-400/10'
-                                            : 'text-red-400 bg-red-400/10'
-                                    }`}>
-                                        {user.status}
-                                    </span>
-                                </td>
-                                <td className="p-4">
-                                    <button
-                                        onClick={() => dispatch(updateUserStatus({
-                                            userId: user._id,  // ✅ _id
-                                            status: user.status === 'Active' ? 'Suspended' : 'Active'
-                                        }))}
-                                        className="text-gray-400 hover:text-white mr-4 transition-colors"
-                                    >
-                                        {user.status === 'Active' ? <UserX size={18} /> : <CheckCircle size={18} />}
-                                    </button>
-                                    <button
-                                        onClick={() => dispatch(deleteUser(user._id))}  // ✅ _id
-                                        className="text-gray-400 hover:text-red-500 transition-colors"
-                                    >
-                                        <Trash2 size={18} />
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-
-                {/* ── Loading State ────────────────────────────────────────────── */}
-                {loading && (
-                    <div className="p-8 text-center text-gray-500">
-                        Loading users...
-                    </div>
-                )}
-
-                {/* ── Empty State ──────────────────────────────────────────────── */}
-                {!loading && !error && list.length === 0 && (
-                    <div className="p-8 text-center text-gray-500">
-                        No users found
-                    </div>
-                )}
-            </div>
-        </div>
+  const handleSelect = (id) => {
+    setSelectedIds(prev =>
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
+  };
+
+  const handleBulkAction = (action) => {
+    if (window.confirm(`Perform ${action} on ${selectedIds.length} users?`)) {
+      dispatch(bulkUserAction({ userIds: selectedIds, action }));
+      setSelectedIds([]);
+    }
+  };
+
+  return (
+    <div className="px-6 py-8 space-y-6 bg-navy min-h-full">
+
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <div>
+          <h1 className="text-white text-xl font-bold tracking-tight">User Accounts</h1>
+          <p className="text-white/40 text-sm mt-1">Manage and moderate customer accounts</p>
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing || loading}
+            className="mt-4 flex items-center gap-2 px-4 py-2 bg-orange text-white rounded-lg text-sm font-medium hover:bg-orange/80 disabled:opacity-50 transition-all"
+          >
+            <RefreshCw size={15} className={refreshing ? 'animate-spin' : ''} />
+            {refreshing ? 'Refreshing...' : 'Refresh'}
+          </button>
+        </div>
+
+        <button
+          onClick={() => dispatch(exportUsers())}
+          className="self-start flex items-center gap-2 bg-royal/10 text-royal border border-royal/20 px-4 py-2 rounded-xl text-sm font-medium hover:bg-royal hover:text-white transition-all"
+        >
+          <Download size={15} /> Export CSV
+        </button>
+      </div>
+
+      {/* Error */}
+      {error && (
+        <div className="bg-crimson/10 border border-crimson/30 text-crimson px-4 py-3 rounded-lg text-sm flex items-center gap-2">
+          <AlertTriangle size={15} /> {error}
+        </div>
+      )}
+
+      {/* Bulk action bar */}
+      {selectedIds.length > 0 && (
+        <div className="bg-orange/10 border border-orange/20 px-4 py-3 rounded-xl flex justify-between items-center">
+          <span className="text-orange text-sm font-medium">{selectedIds.length} users selected</span>
+          <div className="flex gap-2">
+            <button
+              onClick={() => handleBulkAction('suspend')}
+              className="flex items-center gap-1.5 bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg text-xs font-medium text-white/70 hover:text-white transition-all"
+            >
+              <Ban size={13} /> Suspend
+            </button>
+            <button
+              onClick={() => handleBulkAction('delete')}
+              className="flex items-center gap-1.5 bg-crimson/10 border border-crimson/20 px-3 py-1.5 rounded-lg text-xs font-medium text-crimson hover:bg-crimson hover:text-white transition-all"
+            >
+              <Trash2 size={13} /> Delete
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Table */}
+      <div className="bg-white/[0.03] border border-white/10 rounded-2xl overflow-hidden">
+        <table className="w-full text-left text-sm">
+          <thead>
+            <tr className="border-b border-white/5">
+              <th className="px-5 py-3 w-10">
+                <input
+                  type="checkbox"
+                  checked={selectedIds.length === list.length && list.length > 0}
+                  onChange={(e) => setSelectedIds(e.target.checked ? list.map(u => u._id) : [])}
+                  className="accent-orange"
+                />
+              </th>
+              <th className="px-5 py-3 text-[10px] text-white/30 tracking-widest uppercase font-medium">Customer</th>
+              <th className="px-5 py-3 text-[10px] text-white/30 tracking-widest uppercase font-medium">Status</th>
+              <th className="px-5 py-3 text-[10px] text-white/30 tracking-widest uppercase font-medium">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-white/5">
+            {list.map(user => (
+              <tr
+                key={user._id}
+                className={`hover:bg-white/5 transition-all ${selectedIds.includes(user._id) ? 'bg-orange/5' : ''}`}
+              >
+                <td className="px-5 py-4">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.includes(user._id)}
+                    onChange={() => handleSelect(user._id)}
+                    className="accent-orange"
+                  />
+                </td>
+                <td className="px-5 py-4">
+                  <div className="text-white font-medium text-sm">{user.name}</div>
+                  <div className="text-white/35 text-xs mt-0.5">{user.email}</div>
+                </td>
+                <td className="px-5 py-4">
+                  <span className={`px-2.5 py-1 rounded-lg text-[10px] font-medium border ${
+                    user.status === 'Active'
+                      ? 'bg-purple/10 text-purple border-purple/20'
+                      : 'bg-crimson/10 text-crimson border-crimson/20'
+                  }`}>
+                    {user.status}
+                  </span>
+                </td>
+                <td className="px-5 py-4">
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => dispatch(updateUserStatus({
+                        userId: user._id,
+                        status: user.status === 'Active' ? 'Suspended' : 'Active'
+                      }))}
+                      className="text-white/30 hover:text-white transition-colors"
+                      title={user.status === 'Active' ? 'Suspend' : 'Activate'}
+                    >
+                      {user.status === 'Active' ? <UserX size={17} /> : <CheckCircle size={17} />}
+                    </button>
+                    <button
+                      onClick={() => dispatch(deleteUser(user._id))}
+                      className="text-white/30 hover:text-crimson transition-colors"
+                      title="Delete"
+                    >
+                      <Trash2 size={17} />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        {loading && (
+          <div className="p-10 text-center text-white/30 text-sm">Loading users...</div>
+        )}
+
+        {!loading && !error && list.length === 0 && (
+          <div className="p-10 text-center text-white/30 text-sm">No users found</div>
+        )}
+      </div>
+    </div>
+  );
 }
