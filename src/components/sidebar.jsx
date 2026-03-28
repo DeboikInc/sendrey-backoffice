@@ -1,11 +1,10 @@
 import React from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { ShieldCheck, AlertTriangle, Briefcase, Users, LogOut, LayoutDashboard, Package,CreditCard } from 'lucide-react';
+import { ShieldCheck, AlertTriangle, Briefcase, Users, LogOut, Package,CreditCard } from 'lucide-react';
 import { adminLogout } from '../Redux/authSlice';
 
 const NAV_ITEMS = [
-    { label: 'Dashboard', key: 'dashboard', icon: LayoutDashboard },
     { label: 'KYC', key: 'kyc', icon: ShieldCheck },
     { label: 'Disputes', key: 'disputes', icon: AlertTriangle },
     { label: 'Business Users', key: 'business-users', icon: Briefcase },

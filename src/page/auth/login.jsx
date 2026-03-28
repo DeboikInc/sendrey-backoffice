@@ -37,7 +37,7 @@ const Login = () => {
                     {/* Header */}
                     <div className="text-center mb-8">
                         <h1 className="text-3xl font-bold text-secondary mb-2">Welcome Back</h1>
-                        <p className="text-gray-500">Sign in to continue to your account</p>
+                        <p className="text-gray-500">Sign in</p>
                     </div>
 
                     {/* Form */}

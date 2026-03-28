@@ -74,8 +74,9 @@ const runnersSlice = createSlice({
             // Fetch All
             .addCase(getRunners.pending, (state) => { state.loading = true; })
             .addCase(getRunners.fulfilled, (state, action) => {
+                console.log("getRunners Payload check",action.payload)
                 state.loading = false;
-                state.list = action.payload;
+                state.list = action.payload.runners ?? action.payload;
             })
             .addCase(getRunners.rejected, (state, action) => {
                 state.loading = false;
@@ -83,22 +84,21 @@ const runnersSlice = createSlice({
             })
             // Search
             .addCase(searchRunners.fulfilled, (state, action) => {
-                state.list = action.payload;
+                state.list = action.payload.runners ?? action.payload;
             })
             // Stats
             .addCase(getRunnerStats.fulfilled, (state, action) => {
-                state.stats = action.payload;
+                state.stats = action.payload.stats ?? action.payload;
             })
             // Update Status
             .addCase(updateRunnerStatus.fulfilled, (state, action) => {
-                const index = state.list.findIndex(r => r.id === action.payload.id);
-                if (index !== -1) {
-                    state.list[index] = action.payload;
-                }
+                const updated = action.payload.runner ?? action.payload;
+                const index = state.list.findIndex(r => r._id === updated._id);
+                if (index !== -1) state.list[index] = updated;
             })
             // Delete
             .addCase(deleteRunner.fulfilled, (state, action) => {
-                state.list = state.list.filter(r => r.id !== action.payload);
+                state.list = state.list.filter(r => r._id !== action.payload);
             });
     }
 });

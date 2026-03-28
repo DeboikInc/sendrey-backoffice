@@ -103,7 +103,7 @@ const list = Array.isArray(rawList) ? rawList : [];
                     </thead>
                     <tbody className="divide-y divide-white/5">
                         {list.map(runner => (
-                            <tr key={runner.id} className="hover:bg-white/5 transition">
+                            <tr key={runner._id} className="hover:bg-white/5 transition">
                                 <td className="p-4">
                                     <div className="font-bold">{runner.firstName} {runner.lastName}</div>
                                     <div className="text-xs text-gray-500">{runner.email}</div>
@@ -116,7 +116,7 @@ const list = Array.isArray(rawList) ? rawList : [];
                                 </td>
                                 <td className="p-4">
                                     <button
-                                        onClick={() => handleToggleStatus(runner.id, runner.status)}
+                                        onClick={() => handleToggleStatus(runner._id, runner.status)}
                                         className={`px-2 py-1 rounded text-[10px] font-black uppercase ${
                                             runner.status === 'Active'
                                                 ? 'bg-green-500/10 text-green-400'
@@ -128,7 +128,7 @@ const list = Array.isArray(rawList) ? rawList : [];
                                 </td>
                                 <td className="p-4 text-right">
                                     <button
-                                        onClick={() => handleDelete(runner.id)}
+                                        onClick={() => handleDelete(runner._id)}
                                         className="p-2 text-gray-500 hover:text-red-500 transition-colors"
                                     >
                                         <Trash2 size={16} />
