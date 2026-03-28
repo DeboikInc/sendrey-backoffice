@@ -12,13 +12,19 @@ export const getAllOrders = createAsyncThunk('orders/fetchAll', async (_, { reje
 
 const orderSlice = createSlice({
     name: 'orders',
-    initialState: { list: [], loading: false, error: null },
+    initialState: {
+        list: [],
+        count: 0,
+        loading: false,
+        error: null,
+    },
     extraReducers: (builder) => {
         builder
             .addCase(getAllOrders.pending, (state) => { state.loading = true; })
             .addCase(getAllOrders.fulfilled, (state, action) => {
                 state.loading = false;
-                state.list = action.payload;
+                state.list = action.payload.orders;  // ✅ unwrap { orders: [], count: 0 }
+                state.count = action.payload.count;
             })
             .addCase(getAllOrders.rejected, (state, action) => {
                 state.loading = false;

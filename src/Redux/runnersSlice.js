@@ -1,7 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../utils/api';
 
-// 1. Get all runners
 export const getRunners = createAsyncThunk('runners/getRunners', async (_, { rejectWithValue }) => {
     try {
         const response = await api.get('/runners');
@@ -11,7 +10,6 @@ export const getRunners = createAsyncThunk('runners/getRunners', async (_, { rej
     }
 });
 
-// 2. Search runners
 export const searchRunners = createAsyncThunk('runners/search', async (query, { rejectWithValue }) => {
     try {
         const response = await api.get(`/runners/search?q=${query}`);
@@ -21,7 +19,6 @@ export const searchRunners = createAsyncThunk('runners/search', async (query, { 
     }
 });
 
-// 3. Get runner statistics (for the cards at the top of the page)
 export const getRunnerStats = createAsyncThunk('runners/getStats', async (_, { rejectWithValue }) => {
     try {
         const response = await api.get('/runners/stats');
@@ -31,24 +28,22 @@ export const getRunnerStats = createAsyncThunk('runners/getStats', async (_, { r
     }
 });
 
-// 4. Update runner status (Suspend/Activate)
 export const updateRunnerStatus = createAsyncThunk(
     'runners/updateStatus',
     async ({ runnerId, status }, { rejectWithValue }) => {
         try {
             const response = await api.patch(`/runners/${runnerId}/status`, { status });
-            return response.data; // Assuming this returns the updated runner object
+            return response.data;
         } catch (err) {
             return rejectWithValue(err.response.data);
         }
     }
 );
 
-// 5. Delete a runner
 export const deleteRunner = createAsyncThunk('runners/delete', async (runnerId, { rejectWithValue }) => {
     try {
         await api.delete(`/runners/${runnerId}`);
-        return runnerId; // Return the ID to remove it from the state
+        return runnerId; // Raw ID returned manually — no unwrap needed
     } catch (err) {
         return rejectWithValue(err.response.data);
     }
@@ -58,6 +53,7 @@ const runnersSlice = createSlice({
     name: 'runners',
     initialState: {
         list: [],
+        count: 0,
         stats: {
             total: 0,
             active: 0,
@@ -71,33 +67,31 @@ const runnersSlice = createSlice({
     },
     extraReducers: (builder) => {
         builder
-            // Fetch All
             .addCase(getRunners.pending, (state) => { state.loading = true; })
             .addCase(getRunners.fulfilled, (state, action) => {
-                console.log("getRunners Payload check",action.payload)
                 state.loading = false;
-                state.list = action.payload.runners ?? action.payload;
+                state.list = action.payload.runners;  // ✅ unwrap { runners: [], count: 0 }
+                state.count = action.payload.count;
             })
             .addCase(getRunners.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
             })
-            // Search
             .addCase(searchRunners.fulfilled, (state, action) => {
-                state.list = action.payload.runners ?? action.payload;
+                state.list = action.payload.runners;  // ✅ unwrap
             })
-            // Stats
             .addCase(getRunnerStats.fulfilled, (state, action) => {
-                state.stats = action.payload.stats ?? action.payload;
+                state.stats = action.payload.stats ?? action.payload; // ✅ unwrap if nested, fallback to direct
             })
-            // Update Status
             .addCase(updateRunnerStatus.fulfilled, (state, action) => {
-                const updated = action.payload.runner ?? action.payload;
+                const updated = action.payload.runner; // ✅ unwrap { runner: {} }
+                // ✅ MongoDB uses _id, not id
                 const index = state.list.findIndex(r => r._id === updated._id);
                 if (index !== -1) state.list[index] = updated;
             })
-            // Delete
             .addCase(deleteRunner.fulfilled, (state, action) => {
+                // action.payload is the raw runnerId string — no unwrap needed
+                // ✅ MongoDB uses _id, not id
                 state.list = state.list.filter(r => r._id !== action.payload);
             });
     }

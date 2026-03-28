@@ -1,11 +1,11 @@
 import React from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { ShieldCheck, AlertTriangle, Briefcase, Users, LogOut, Package,CreditCard } from 'lucide-react';
+import { ShieldCheck, AlertTriangle, Briefcase, Users, LogOut, LayoutDashboard, Package,CreditCard } from 'lucide-react';
 import { adminLogout } from '../Redux/authSlice';
-
+import logo from "../assets/Sendrey-Logo-Variants-09.png"
 const NAV_ITEMS = [
-    { label: 'KYC', key: 'kyc', icon: ShieldCheck },
+    { label: 'Dashboard', key: 'dashboard', icon: LayoutDashboard },
     { label: 'Disputes', key: 'disputes', icon: AlertTriangle },
     { label: 'Business Users', key: 'business-users', icon: Briefcase },
     { label: 'Users ', key: 'users', icon: Users },
@@ -27,8 +27,9 @@ export default function Sidebar({ activePage, onNavigate }) {
         <aside className="h-screen w-64 flex-shrink-0 flex flex-col bg-black-200 border-r border-white/5">
 
             {/* Brand */}
-            <div className="px-6 py-6 border-b border-white/5">
-                <p className="text-xs font-bold uppercase tracking-[0.3em] text-primary">Sendrey Admin</p>
+            <div className="px-6 py-2 border-white/5">
+      <img src={logo}alt='sendrey logo' className='w-2/3 m-2'  ></img>
+                <p className="text-xs font-bold uppercase tracking-[0.3em] text-primary">Admin</p>
             </div>
 
             {/* Nav */}

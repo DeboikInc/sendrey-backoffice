@@ -1,7 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../utils/api';
 
-// 1. List all users
 export const listUsers = createAsyncThunk('users/list', async (_, { rejectWithValue }) => {
     try {
         const response = await api.get('/users');
@@ -11,7 +10,6 @@ export const listUsers = createAsyncThunk('users/list', async (_, { rejectWithVa
     }
 });
 
-// 2. Search users
 export const searchUsers = createAsyncThunk('users/search', async (query, { rejectWithValue }) => {
     try {
         const response = await api.get(`/api/admin/users/search?q=${query}`);
@@ -21,7 +19,6 @@ export const searchUsers = createAsyncThunk('users/search', async (query, { reje
     }
 });
 
-// 3. Get single user details
 export const getSingleUser = createAsyncThunk('users/getOne', async (userId, { rejectWithValue }) => {
     try {
         const response = await api.get(`/api/admin/users/${userId}`);
@@ -31,7 +28,6 @@ export const getSingleUser = createAsyncThunk('users/getOne', async (userId, { r
     }
 });
 
-// 4. Update user role (e.g., standard to admin)
 export const updateUserRole = createAsyncThunk('users/updateRole', async ({ userId, role }, { rejectWithValue }) => {
     try {
         const response = await api.patch(`/api/admin/users/${userId}/role`, { role });
@@ -41,7 +37,6 @@ export const updateUserRole = createAsyncThunk('users/updateRole', async ({ user
     }
 });
 
-// 5. Update user status (Active/Suspended/Flagged)
 export const updateUserStatus = createAsyncThunk('users/updateStatus', async ({ userId, status }, { rejectWithValue }) => {
     try {
         const response = await api.patch(`/api/admin/users/${userId}/status`, { status });
@@ -51,7 +46,6 @@ export const updateUserStatus = createAsyncThunk('users/updateStatus', async ({ 
     }
 });
 
-// 6. Bulk actions (e.g., banning multiple selected users)
 export const bulkUserAction = createAsyncThunk('users/bulkAction', async ({ userIds, action }, { rejectWithValue }) => {
     try {
         const response = await api.post('/api/admin/users/bulk/action', { userIds, action });
@@ -61,17 +55,15 @@ export const bulkUserAction = createAsyncThunk('users/bulkAction', async ({ user
     }
 });
 
-// 7. Delete user
 export const deleteUser = createAsyncThunk('users/delete', async (userId, { rejectWithValue }) => {
     try {
         await api.delete(`/api/admin/users/${userId}`);
-        return userId;
+        return userId; 
     } catch (err) {
         return rejectWithValue(err.response.data);
     }
 });
 
-// 8. Export Users (Downloads a CSV/Excel)
 export const exportUsers = createAsyncThunk('users/export', async (_, { rejectWithValue }) => {
     try {
         const response = await api.get('/api/admin/users/export', { responseType: 'blob' });
@@ -91,6 +83,7 @@ const usersSlice = createSlice({
     name: 'users',
     initialState: {
         list: [],
+        count: 0,
         selectedUser: null,
         loading: false,
         error: null,
@@ -103,24 +96,29 @@ const usersSlice = createSlice({
             .addCase(listUsers.pending, (state) => { state.loading = true; })
             .addCase(listUsers.fulfilled, (state, action) => {
                 state.loading = false;
-                state.list = action.payload;
+                state.list = action.payload.users;   
+                state.count = action.payload.count;
             })
             .addCase(listUsers.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
             })
             .addCase(searchUsers.fulfilled, (state, action) => {
-                state.list = action.payload;
+                state.list = action.payload.users;  
             })
             .addCase(getSingleUser.fulfilled, (state, action) => {
-                state.selectedUser = action.payload;
+                state.selectedUser = action.payload.user; 
             })
             .addCase(updateUserStatus.fulfilled, (state, action) => {
-                const index = state.list.findIndex(u => u.id === action.payload.id);
-                if (index !== -1) state.list[index] = action.payload;
+                
+                const updated = action.payload.user;  
+                
+                const index = state.list.findIndex(u => u._id === updated._id);
+                if (index !== -1) state.list[index] = updated;
             })
             .addCase(deleteUser.fulfilled, (state, action) => {
-                state.list = state.list.filter(u => u.id !== action.payload);
+                
+                state.list = state.list.filter(u => u._id !== action.payload);
             });
     }
 });

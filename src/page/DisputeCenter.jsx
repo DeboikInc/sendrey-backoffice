@@ -7,18 +7,16 @@ import { AlertTriangle, Clock, CheckCircle, MessageSquare, RefreshCw } from 'luc
 export default function DisputeCenter() {
     const dispatch = useDispatch();
 
-   const { list: rawList, loading = false, error = null } = useSelector(state => state.dispute || {});
-const list = Array.isArray(rawList) ? rawList : [];
-
+    const { list: rawList, loading = false, error = null } = useSelector(state => state.dispute || {});
+    const list = Array.isArray(rawList) ? rawList : [];
 
     const [filter, setFilter] = useState('All');
-    const [refreshing, setRefreshing] = useState(false);  // ← local refresh state
+    const [refreshing, setRefreshing] = useState(false);
 
     useEffect(() => {
         dispatch(getAllDisputes());
     }, [dispatch]);
 
-    // ── Refresh handler (mirrors KYC handleRefresh) ──────────────────────────
     const handleRefresh = async () => {
         setRefreshing(true);
         try {
@@ -50,7 +48,6 @@ const list = Array.isArray(rawList) ? rawList : [];
                     <h1 className="text-2xl font-black italic">DISPUTE CENTER</h1>
                     <p className="text-gray-400 text-sm">Review and resolve order conflicts</p>
 
-                    {/* Refresh button (mirrors KYC pattern) */}
                     <div className="flex items-center gap-3 mt-5">
                         <button
                             onClick={handleRefresh}
@@ -78,7 +75,7 @@ const list = Array.isArray(rawList) ? rawList : [];
                 </div>
             </div>
 
-            {/* ── Error Banner (mirrors KYC error block) ──────────────────────── */}
+            {/* ── Error Banner ────────────────────────────────────────────────── */}
             {error && (
                 <div className="bg-red-500/20 border border-red-500 text-red-300 px-4 py-3 rounded-lg">
                     Error: {error}
@@ -102,7 +99,7 @@ const list = Array.isArray(rawList) ? rawList : [];
             {/* ── Dispute Cards ───────────────────────────────────────────────── */}
             <div className="grid gap-4">
                 {filteredDisputes.map((dispute) => (
-                    <div key={dispute.id} className="bg-white/5 border border-white/10 rounded-2xl p-5 hover:border-primary/40 transition">
+                    <div key={dispute._id} className="bg-white/5 border border-white/10 rounded-2xl p-5 hover:border-primary/40 transition"> {/* ✅ _id */}
                         <div className="flex justify-between items-start">
                             <div className="flex gap-4">
                                 <div className={`p-3 rounded-xl ${dispute.status === 'Pending' ? 'bg-red-500/10 text-red-500' : 'bg-green-500/10 text-green-500'}`}>
@@ -127,7 +124,7 @@ const list = Array.isArray(rawList) ? rawList : [];
 
                             {dispute.status === 'Pending' && (
                                 <button
-                                    onClick={() => handleResolve(dispute.id)}
+                                    onClick={() => handleResolve(dispute._id)} // ✅ _id
                                     className="bg-primary/10 text-primary border border-primary/20 px-4 py-2 rounded-xl text-xs font-black hover:bg-primary hover:text-white transition"
                                 >
                                     RESOLVE CASE

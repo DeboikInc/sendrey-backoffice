@@ -128,8 +128,11 @@ const kycAdminSlice = createSlice({
             .addCase(getPendingKYC.pending, pending)
             .addCase(getPendingKYC.fulfilled, (state, action) => {
                 state.status = "succeeded";
-                const data = action.payload?.data || action.payload;
-                state.pendingRunners = Array.isArray(data) ? data : [];
+                //const data = action.payload?.data || action.payload;
+                state.pendingRunners = (action.payload.runners ?? []).map(r => ({
+        ...r,
+        _id: r._id || r.id,
+    }));
                 state.totalPending = state.pendingRunners.length;
             })
             .addCase(getPendingKYC.rejected, rejected)
@@ -137,7 +140,8 @@ const kycAdminSlice = createSlice({
             .addCase(getRunnerKYCDetails.pending, pending)
             .addCase(getRunnerKYCDetails.fulfilled, (state, action) => {
                 state.status = "succeeded";
-                state.selectedRunner = action.payload?.data || action.payload;
+                const runner = action.payload.runner ?? action.payload.data ?? action.payload;
+                  state.selectedRunner = { ...runner, _id: runner._id || runner.id };
             })
             .addCase(getRunnerKYCDetails.rejected, rejected)
 
@@ -188,10 +192,13 @@ const kycAdminSlice = createSlice({
             .addCase(getVerifiedRunners.pending, pending)
             .addCase(getVerifiedRunners.fulfilled, (state, action) => {
                 state.status = "succeeded";
-                const data = action.payload?.data || action.payload;
-                state.verifiedRunners = Array.isArray(data) ? data : [];
+                state.verifiedRunners = (action.payload.runners ?? []).map(r => ({
+                ...r,
+                _id: r._id || r.id,
+            }));
             })
-            .addCase(getVerifiedRunners.rejected, rejected);
+            .addCase(getVerifiedRunners.rejected, rejected)
+            
     },
 });
 

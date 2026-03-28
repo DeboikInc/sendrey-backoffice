@@ -2,23 +2,22 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { getBusinessAccounts, getSuggestions, convertToBusiness, revokeBusiness } from '../Redux/businessSlice';
-import { UserPlus,  RefreshCw } from 'lucide-react';
+import { UserPlus, RefreshCw } from 'lucide-react';
 
 export default function BusinessDashboard() {
     const dispatch = useDispatch();
-   const { accounts: rawAccounts, suggestions: rawSuggestions, loading = false, error = null } = useSelector(state => state.business || {});
-const accounts = Array.isArray(rawAccounts) ? rawAccounts : [];
-const suggestions = Array.isArray(rawSuggestions) ? rawSuggestions : [];
+    const { accounts: rawAccounts, suggestions: rawSuggestions, loading = false, error = null } = useSelector(state => state.business || {});
+    const accounts    = Array.isArray(rawAccounts)    ? rawAccounts    : [];
+    const suggestions = Array.isArray(rawSuggestions) ? rawSuggestions : [];
 
-    const [view, setView] = useState('accounts');
-    const [refreshing, setRefreshing] = useState(false);  // ← local refresh state
+    const [view, setView]           = useState('accounts');
+    const [refreshing, setRefreshing] = useState(false);
 
     useEffect(() => {
         dispatch(getBusinessAccounts());
         dispatch(getSuggestions());
     }, [dispatch]);
 
-    // ── Refresh handler (mirrors KYC handleRefresh) ──────────────────────────
     const handleRefresh = async () => {
         setRefreshing(true);
         try {
@@ -39,7 +38,6 @@ const suggestions = Array.isArray(rawSuggestions) ? rawSuggestions : [];
                     <h1 className="text-2xl font-black italic">BUSINESS ECOSYSTEM</h1>
                     <p className="text-gray-400 text-sm">Manage corporate accounts and conversion leads</p>
 
-                    {/* Refresh button (mirrors KYC pattern) */}
                     <div className="flex items-center gap-3 mt-5">
                         <button
                             onClick={handleRefresh}
@@ -69,7 +67,7 @@ const suggestions = Array.isArray(rawSuggestions) ? rawSuggestions : [];
                 </div>
             </div>
 
-            {/* ── Error Banner (mirrors KYC error block) ──────────────────────── */}
+            {/* ── Error Banner ────────────────────────────────────────────────── */}
             {error && (
                 <div className="bg-red-500/20 border border-red-500 text-red-300 px-4 py-3 rounded-lg">
                     Error: {error}
@@ -88,7 +86,7 @@ const suggestions = Array.isArray(rawSuggestions) ? rawSuggestions : [];
                     </thead>
                     <tbody className="divide-y divide-white/5">
                         {activeList.map(item => (
-                            <tr key={item.userId} className="hover:bg-white/5 transition">
+                            <tr key={item._id} className="hover:bg-white/5 transition">
                                 <td className="p-4">
                                     <div className="font-bold">{item.businessName || item.name}</div>
                                     <div className="text-xs text-gray-500">{item.email}</div>
@@ -101,14 +99,14 @@ const suggestions = Array.isArray(rawSuggestions) ? rawSuggestions : [];
                                 <td className="p-4 text-right">
                                     {view === 'accounts' ? (
                                         <button
-                                            onClick={() => dispatch(revokeBusiness(item.userId))}
+                                            onClick={() => dispatch(revokeBusiness(item._id))} // ✅ _id
                                             className="text-red-400 hover:text-red-300 text-xs font-bold transition-colors"
                                         >
                                             REVOKE
                                         </button>
                                     ) : (
                                         <button
-                                            onClick={() => dispatch(convertToBusiness(item.userId))}
+                                            onClick={() => dispatch(convertToBusiness(item._id))} // ✅ _id
                                             className="flex items-center gap-1 ml-auto bg-primary/20 text-primary px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-primary hover:text-white transition"
                                         >
                                             <UserPlus size={14} /> CONVERT
