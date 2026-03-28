@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Menu } from 'lucide-react';
 import Sidebar from '../components/sidebar';
 
-import Disputes from './DisputeCenter';
+import Disputes from './Disputes';
 import BusinessUsers from './BusinessUsers';
 import DashBoard from './DashBoard';
 import RunnersList from './RunnerList';
