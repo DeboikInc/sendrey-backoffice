@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { registerAdmin } from '../../Redux/authSlice';
-import { useNavigate, Link } from "react-router-dom";
+import {  Link } from "react-router-dom";
 
 const Register = () => {
     const dispatch = useDispatch();
     const { status, error } = useSelector(state => state.auth);
-    const navigate = useNavigate();
     const [formData, setFormData] = useState({
         email: '',
         password: '',
@@ -37,8 +36,12 @@ const Register = () => {
             <div className="w-full max-w-lg">
                 {/* Card Container */}
                 <div className="bg-white rounded-lg shadow-lg p-8">
+                    {
+                        error && <p>{error}</p>
+                    }
                     {/* Header */}
                     <div className="text-center mb-8">
+
                         <h1 className="text-3xl font-bold text-secondary mb-2">Create Account</h1>
                         <p className="text-gray-500">Sign up to get started</p>
                     </div>
@@ -140,7 +143,7 @@ const Register = () => {
                         <button
                             type="submit"
                             disabled={status === 'loading'}
-                            className="w-full bg-primary text-white py-3 rounded-md font-medium hover:bg-opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed mt-6"
+                            className="w-full bg-orange text-white py-3 rounded-md font-medium hover:bg-opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed mt-6"
                         >
                             {status === 'loading' ? 'Please wait...' : 'Create Account'}
                         </button>

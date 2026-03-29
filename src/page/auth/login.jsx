@@ -5,7 +5,7 @@ import { useNavigate, Link } from "react-router-dom";
 
 const Login = () => {
     const dispatch = useDispatch();
-    const { status, error } = useSelector(state => state.auth);
+    const { status } = useSelector(state => state.auth);
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
         email: '',
@@ -90,7 +90,7 @@ const Login = () => {
                         <button
                             type="submit"
                             disabled={status === 'loading'}
-                            className="w-full bg-primary text-white py-3 rounded-md font-medium hover:bg-opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed mt-6"
+                            className="w-full bg-orange text-white py-3 rounded-md font-medium hover:bg-opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed mt-6"
                         >
                             {status === 'loading' ? 'Please wait...' : 'Sign In'}
                         </button>
