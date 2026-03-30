@@ -4,20 +4,20 @@ import Sidebar from '../components/sidebar';
 
 import Disputes from './Disputes';
 import BusinessUsers from './BusinessUsers';
-import DashBoard from './DashBoard';
+import KycDashBoard from './KycDashBoard';
 import RunnersList from './RunnerList';
 import UsersList from './UserList';
 import OrdersList from './OrdersList';
-import PayoutManagement from './Payout';
+import Payout from './Payout';
 
 const PAGES = {
-  'dashboard':      <DashBoard title="Dashboard" />,
+  'dashboard':      <KycDashBoard title="Dashboard" />,
   'disputes':       <Disputes title="Disputes" />,
   'business-users': <BusinessUsers title="Business Users" />,
   'runner-list':    <RunnersList title="Runner List" />,
   'users':          <UsersList title="User List" />,
   'orders':         <OrdersList title="Order List" />,
-  'payout':         <PayoutManagement title="Payout List" />,
+  'payout':         <Payout title="Payout List" />,
 };
 
 export default function Home() {

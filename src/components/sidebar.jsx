@@ -3,7 +3,7 @@ import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import {
   AlertTriangle, Briefcase, Users, LogOut,
-  LayoutDashboard, Package, CreditCard, X, ShieldCheck
+  LayoutDashboard, Package, CreditCard, X
 } from 'lucide-react';
 import { adminLogout } from '../Redux/authSlice';
 import logo from '../assets/Sendrey-Logo-Variants-09.png';

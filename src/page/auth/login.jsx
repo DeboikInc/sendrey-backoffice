@@ -5,7 +5,7 @@ import { useNavigate, Link } from "react-router-dom";
 
 const Login = () => {
     const dispatch = useDispatch();
-    const { status, error } = useSelector(state => state.auth);
+    const { status } = useSelector(state => state.auth);
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
         email: '',

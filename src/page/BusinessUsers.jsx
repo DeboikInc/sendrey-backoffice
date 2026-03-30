@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { getBusinessAccounts, getSuggestions, convertToBusiness, revokeBusiness } from '../Redux/businessSlice';
 import { UserPlus, RefreshCw, AlertTriangle } from 'lucide-react';
 
-export default function BusinessDashboard() {
+export default function BusinessUsers() {
   const dispatch = useDispatch();
   const { accounts: rawAccounts, suggestions: rawSuggestions, loading = false, error = null } = useSelector(state => state.business || {});
   const accounts    = Array.isArray(rawAccounts)    ? rawAccounts    : [];

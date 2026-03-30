@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { getAllDisputes, resolveDispute } from '../Redux/disputeSlice';
 import { AlertTriangle, Clock, CheckCircle, MessageSquare, RefreshCw } from 'lucide-react';
 
-export default function Dispute() {
+export default function Disputes() {
   const dispatch = useDispatch();
   const { list: rawList, loading = false, error = null } = useSelector(state => state.dispute || {});
   const list = Array.isArray(rawList) ? rawList : [];

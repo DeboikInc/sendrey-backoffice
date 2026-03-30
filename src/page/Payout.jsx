@@ -1,4 +1,4 @@
-// admin-dashboard/src/pages/PayoutManagement.jsx
+
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { getPayoutReceipts } from '../Redux/payoutSlice';
@@ -6,8 +6,8 @@ import { FileText, Check, X, RefreshCw, Clock, AlertTriangle } from 'lucide-reac
 
 export default function Payout() {
     const dispatch = useDispatch();
-    const { receipts: rawReceipts, count = 0, loading = false, error = null } = useSelector(state => state.payout || state.payouts || {});
-    const receipts = Array.isArray(rawReceipts) ? rawReceipts : [];
+    const { receipts, count = receipts.length, loading = false, error = null } = useSelector(state => state.payout || state.payouts || {});
+    //const receipts = Array.isArray(rawReceipts) ? rawReceipts : [];
 
     const [refreshing, setRefreshing] = useState(false);
 
