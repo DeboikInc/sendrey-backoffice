@@ -34,7 +34,6 @@ export default function VerifCard({ title, data, type, onApprove, onReject, reje
       </div>
 
       {/* Image preview */}
-      // replace the image block
       <div className="relative bg-black border-b border-[#1a1a2e] min-h-[140px] flex items-center justify-center">
         {imageUrl ? (
           <a href={imageUrl} target="_blank" rel="noreferrer" className="block w-full">
