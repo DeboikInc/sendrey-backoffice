@@ -139,6 +139,7 @@ const kycAdminSlice = createSlice({
 
             .addCase(getRunnerKYCDetails.pending, pending)
             .addCase(getRunnerKYCDetails.fulfilled, (state, action) => {
+                 console.log('Runner details payload:', JSON.stringify(action.payload, null, 2))
                 state.status = "succeeded";
                 const runner = action.payload.runner ?? action.payload.data ?? action.payload;
                   state.selectedRunner = { ...runner, _id: runner._id || runner.id };
