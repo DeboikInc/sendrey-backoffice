@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Search, Star, Trash2, ShieldAlert, Bike, RefreshCw, AlertTriangle } from 'lucide-react';
 import { getRunners, searchRunners, getRunnerStats, updateRunnerStatus, deleteRunner } from '../Redux/runnersSlice';
@@ -27,16 +27,20 @@ export default function RunnersList() {
     }
   };
 
-  const delayedSearch = useCallback(
-    debounce((q) => dispatch(searchRunners(q)), 500),
-    []
-  );
+ const debouncedSearch = useMemo(
+  () => 
+    debounce((query) => {
+      dispatch(searchRunners(query));
+    }, 500),
+  [dispatch] // Tell React to only recreate this if 'dispatch' changes
+);
 
-  const handleSearch = (e) => {
-    setSearchTerm(e.target.value);
-    delayedSearch(e.target.value);
-  };
-
+// Your handler stays simple
+const handleSearch = (e) => {
+  const value = e.target.value;
+  setSearchTerm(value);
+  debouncedSearch(value);
+};
   const handleToggleStatus = (id, currentStatus) => {
     const newStatus = currentStatus === 'Active' ? 'Suspended' : 'Active';
     if (window.confirm(`Change runner status to ${newStatus}?`)) {
