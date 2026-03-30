@@ -2,9 +2,13 @@
 import { FileText, Camera, CheckCircle, XCircle } from 'lucide-react';
 
 export default function VerifCard({ title, data, type, onApprove, onReject, rejectReason, setRejectReason }) {
-  const isPending  = data?.status === 'pending_review';
+  const isPending = data?.status === 'pending_review';
   const isApproved = data?.status === 'approved';
   const isRejected = data?.status === 'rejected';
+
+  // backend stores documentPath for docs, selfieImage for selfies
+  const rawPath = type === 'selfie' ? data?.selfieImage : data?.documentPath;
+  const imageUrl = rawPath || null;
 
   return (
     <div className={`rounded-xl border bg-[#0c0c12] overflow-hidden transition-all
@@ -15,27 +19,40 @@ export default function VerifCard({ title, data, type, onApprove, onReject, reje
         <div className="flex items-center gap-2">
           {type === 'id'
             ? <FileText size={14} className="text-[#44445a]" />
-            : <Camera   size={14} className="text-[#44445a]" />}
+            : <Camera size={14} className="text-[#44445a]" />}
           <span className="text-xs font-bold text-[#d0d0e8] tracking-wide" style={{ fontFamily: "'Syne', sans-serif" }}>
             {title}
           </span>
         </div>
         <span className={`text-[9px] font-bold tracking-widest uppercase px-2 py-1 rounded-full border
-          ${isPending  ? 'text-[#fbbf24] bg-[#fbbf24]/10 border-[#fbbf24]/20'
-          : isApproved ? 'text-[#c8ff00] bg-[#c8ff00]/10 border-[#c8ff00]/20'
-          : isRejected ? 'text-[#ff4757] bg-[#ff4757]/10 border-[#ff4757]/20'
-          :               'text-[#44445a] bg-[#44445a]/10 border-[#44445a]/20'}`}>
+          ${isPending ? 'text-[#fbbf24] bg-[#fbbf24]/10 border-[#fbbf24]/20'
+            : isApproved ? 'text-[#c8ff00] bg-[#c8ff00]/10 border-[#c8ff00]/20'
+              : isRejected ? 'text-[#ff4757] bg-[#ff4757]/10 border-[#ff4757]/20'
+                : 'text-[#44445a] bg-[#44445a]/10 border-[#44445a]/20'}`}>
           {data?.status?.replace('_', ' ') || 'Unknown'}
         </span>
       </div>
 
       {/* Image preview */}
-      {data?.imageUrl && (
-        <div className="relative bg-[#0a0a0f] border-b border-[#1a1a2e]">
-          <img src={data.imageUrl} alt={title} className="w-full h-40 object-cover opacity-90" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0f]/60 to-transparent" />
-        </div>
-      )}
+      // replace the image block
+      <div className="relative bg-black border-b border-[#1a1a2e] min-h-[140px] flex items-center justify-center">
+        {imageUrl ? (
+          <a href={imageUrl} target="_blank" rel="noreferrer" className="block w-full">
+            <img
+              src={imageUrl}
+              alt={title}
+              className="w-full h-40 object-cover opacity-90 hover:opacity-100 transition-opacity cursor-pointer"
+              onError={e => { e.target.style.display = 'none'; }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0f]/60 to-transparent pointer-events-none" />
+          </a>
+        ) : (
+          <div className="flex flex-col items-center gap-2 py-8 text-[#44445a]">
+            {type === 'selfie' ? <Camera size={24} /> : <FileText size={24} />}
+            <p className="text-[10px] tracking-wide">No image available - pedestrian</p>
+          </div>
+        )}
+      </div>
 
       {/* Details */}
       <div className="p-4 space-y-2">
@@ -49,6 +66,12 @@ export default function VerifCard({ title, data, type, onApprove, onReject, reje
           <div className="flex items-center justify-between">
             <span className="text-[10px] text-[#44445a] tracking-wider uppercase">Submitted</span>
             <span className="text-[11px] text-[#b0b0c8]">{new Date(data.submittedAt).toLocaleDateString()}</span>
+          </div>
+        )}
+        {data?.rejectionReason && (
+          <div className="flex flex-col gap-1 mt-1">
+            <span className="text-[10px] text-[#ff4757] tracking-wider uppercase">Rejection Reason</span>
+            <span className="text-[11px] text-[#ff4757]/70">{data.rejectionReason}</span>
           </div>
         )}
       </div>

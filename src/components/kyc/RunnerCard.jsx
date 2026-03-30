@@ -5,8 +5,7 @@ import DocPill from './DocPill';
 export default function RunnerCard({ runner, view, i, onReview }) {
   return (
     <div
-      className="p-4 border-b border-[#1a1a2e]/50 last:border-0 fade-up"
-      style={{ animationDelay: `${i * 0.04}s`, opacity: 0 }}
+      className="p-4 border-b border-[#1a1a2e]/50 last:border-0"
     >
       {/* Name + status */}
       <div className="flex items-start justify-between gap-3">
@@ -44,7 +43,7 @@ export default function RunnerCard({ runner, view, i, onReview }) {
       {/* Review button */}
       <button
         onClick={onReview}
-        className="mt-3 w-full flex items-center justify-center gap-1.5 py-2 rounded-lg bg-[#c8ff00]/10 border border-[#c8ff00]/20 text-[#c8ff00] text-[11px] font-bold hover:bg-[#c8ff00]/20 transition-all"
+        className="mt-3 w-full flex items-center justify-center gap-1.5 py-2 rounded-lg bg-orange/10 border border-orange/20 text-orange text-[11px] font-bold hover:bg-orange/20 transition-all"
       >
         <Eye size={12} /> Review Runner
       </button>

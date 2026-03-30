@@ -6,6 +6,7 @@ export const getPendingKYC = createAsyncThunk(
     async (_, thunkAPI) => {
         try {
             const response = await api.get("/kyc/pending");
+            console.log("Fetched pending KYC:", response.data);
             return response.data;
         } catch (error) {
             return thunkAPI.rejectWithValue(
@@ -127,6 +128,7 @@ const kycAdminSlice = createSlice({
         builder
             .addCase(getPendingKYC.pending, pending)
             .addCase(getPendingKYC.fulfilled, (state, action) => {
+                console.log('payload in reducer:', action.payload);
                 state.status = "succeeded";
                 //const data = action.payload?.data || action.payload;
                 state.pendingRunners = (action.payload.runners ?? []).map(r => ({
@@ -134,6 +136,7 @@ const kycAdminSlice = createSlice({
         _id: r._id || r.id,
     }));
                 state.totalPending = state.pendingRunners.length;
+                console.log('pendingRunners saved:', state.pendingRunners);
             })
             .addCase(getPendingKYC.rejected, rejected)
 

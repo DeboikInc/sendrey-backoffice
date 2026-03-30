@@ -7,20 +7,22 @@ import {
   clearSelectedRunner, getVerifiedRunners,
 } from '../Redux/kycSlice';
 
-import RunnerRow   from '../components/kyc/RunnerRow';
 import RunnerCard  from '../components/kyc/RunnerCard';
 import RunnerModal from '../components/kyc/RunnerModal';
 
 export default function KycDashboard() {
-  const [view, setView]         = useState('pending');
-  const [search, setSearch]     = useState('');
+  const [view, setView]             = useState('pending');
+  const [search, setSearch]         = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const dispatch = useDispatch();
 
   const {
-    pendingRunners = [], totalPending = 0,
-    verifiedRunners = [], selectedRunner = null,
-    status = 'idle', error = '',
+    pendingRunners  = [],
+    totalPending    = 0,
+    verifiedRunners = [],
+    selectedRunner  = null,
+    status          = 'idle',
+    error           = '',
   } = useSelector(state => state.adminKyc || {});
 
   useEffect(() => {
@@ -141,44 +143,18 @@ export default function KycDashboard() {
         </div>
       )}
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-
-        {/* Desktop table */}
-        <div className="hidden md:block rounded-xl border border-white/5 bg-white/[0.03] overflow-hidden">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-white/5">
-                {['Runner', 'Contact', 'Pending Items', 'Status', ''].map((h, i) => (
-                  <th key={i}
-                    className={`px-5 py-3 text-[10px] text-white/30 tracking-widest uppercase font-medium ${i === 4 ? 'text-right' : 'text-left'}`}>
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {displayData.map((runner, i) => (
-                <RunnerRow
-                  key={runner._id}
-                  runner={runner}
-                  view={view}
-                  i={i}
-                  onReview={() => dispatch(getRunnerKYCDetails(runner._id))}
-                />
-              ))}
-            </tbody>
-          </table>
-          {displayData.length === 0 && <EmptyState status={status} view={view} />}
-        </div>
-
-        {/* Mobile card list */}
-        <div className="md:hidden rounded-xl border border-white/5 bg-white/[0.03] overflow-hidden">
-          {displayData.length === 0 ? (
-            <EmptyState status={status} view={view} />
-          ) : (
-            displayData.map((runner, i) => (
+      {/* Card grid */}
+      <div
+        className="flex-1 overflow-y-auto px-4 sm:px-6 py-4"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {status === 'loading' && displayData.length === 0 ? (
+          <EmptyState status={status} view={view} />
+        ) : displayData.length === 0 ? (
+          <EmptyState status={status} view={view} />
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {displayData.map((runner, i) => (
               <RunnerCard
                 key={runner._id}
                 runner={runner}
@@ -186,9 +162,9 @@ export default function KycDashboard() {
                 i={i}
                 onReview={() => dispatch(getRunnerKYCDetails(runner._id))}
               />
-            ))
-          )}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Detail modal */}

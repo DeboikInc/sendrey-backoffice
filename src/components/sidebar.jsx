@@ -9,7 +9,7 @@ import { adminLogout } from '../Redux/authSlice';
 import logo from '../assets/Sendrey-Logo-Variants-09.png';
 
 const NAV_ITEMS = [
-  { label: 'Dashboard',      key: 'dashboard',     icon: LayoutDashboard },
+  { label: 'KYC',      key: 'dashboard',     icon: LayoutDashboard },
   { label: 'Disputes',       key: 'disputes',       icon: AlertTriangle },
   { label: 'Business Users', key: 'business-users', icon: Briefcase },
   { label: 'Users',          key: 'users',          icon: Users },
