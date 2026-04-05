@@ -49,6 +49,42 @@ export const deleteRunner = createAsyncThunk('runners/delete', async (runnerId, 
     }
 });
 
+export const banRunner = createAsyncThunk(
+    'runners/ban',
+    async (runnerId, { rejectWithValue }) => {
+        try {
+            const response = await api.patch(`/runners/${runnerId}/status`, { status: 'banned' });
+            return response.data;
+        } catch (err) {
+            return rejectWithValue(err.response.data);
+        }
+    }
+);
+
+export const unbanRunner = createAsyncThunk(
+    'runners/unban',
+    async (runnerId, { rejectWithValue }) => {
+        try {
+            const response = await api.patch(`/runners/${runnerId}/status`, { status: 'pending_verification' });
+            return response.data;
+        } catch (err) {
+            return rejectWithValue(err.response.data);
+        }
+    }
+);
+
+export const resetStrikeCount = createAsyncThunk(
+    'runners/resetStrikes',
+    async (runnerId, { rejectWithValue }) => {
+        try {
+            const response = await api.patch(`/runners/${runnerId}/reset-strikes`);
+            return response.data;
+        } catch (err) {
+            return rejectWithValue(err.response.data);
+        }
+    }
+);
+
 const runnersSlice = createSlice({
     name: 'runners',
     initialState: {
@@ -93,6 +129,22 @@ const runnersSlice = createSlice({
                 // action.payload is the raw runnerId string — no unwrap needed
                 // ✅ MongoDB uses _id, not id
                 state.list = state.list.filter(r => r._id !== action.payload);
+            })
+
+            .addCase(banRunner.fulfilled, (state, action) => {
+                const updated = action.payload.runner;
+                const index = state.list.findIndex(r => r._id === updated._id);
+                if (index !== -1) state.list[index] = updated;
+            })
+            .addCase(unbanRunner.fulfilled, (state, action) => {
+                const updated = action.payload.runner;
+                const index = state.list.findIndex(r => r._id === updated._id);
+                if (index !== -1) state.list[index] = updated;
+            })
+            .addCase(resetStrikeCount.fulfilled, (state, action) => {
+                const updated = action.payload.runner;
+                const index = state.list.findIndex(r => r._id === updated._id);
+                if (index !== -1) state.list[index] = updated;
             });
     }
 });
