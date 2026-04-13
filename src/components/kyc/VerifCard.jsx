@@ -1,7 +1,7 @@
 // components/kyc/VerifCard.jsx
 import { FileText, Camera, CheckCircle, XCircle } from 'lucide-react';
 
-export default function VerifCard({ title, data, type, onApprove, onReject, rejectReason, setRejectReason }) {
+export default function VerifCard({ title, data, type, onApprove, onReject, rejectReason, setRejectReason, readOnly }) {
   const isPending  = data?.status === 'pending_review';
   const isApproved = data?.status === 'approved';
   const isRejected = data?.status === 'rejected';
@@ -76,7 +76,7 @@ export default function VerifCard({ title, data, type, onApprove, onReject, reje
       </div>
 
       {/* Actions — only shown when pending */}
-      {isPending && (
+      {isPending && !readOnly && (
         <div className="px-4 pb-4 space-y-2">
           <input
             value={rejectReason}

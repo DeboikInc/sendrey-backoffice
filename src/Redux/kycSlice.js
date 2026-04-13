@@ -1,12 +1,17 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../utils/api";
 
+// ── Normalize id → _id ────────────────────────────────────
+const normalize = (runner) => ({
+    ...runner,
+    _id: runner._id || runner.id,
+});
+
 export const getPendingKYC = createAsyncThunk(
     "kycAdmin/getPending",
     async (_, thunkAPI) => {
         try {
             const response = await api.get("/kyc/pending");
-            console.log("Fetched pending KYC:", response.data);
             return response.data;
         } catch (error) {
             return thunkAPI.rejectWithValue(
@@ -32,10 +37,10 @@ export const getRunnerKYCDetails = createAsyncThunk(
 
 export const approveDocument = createAsyncThunk(
     "kycAdmin/approveDocument",
-    async ({ runnerId, ...body }, thunkAPI) => {
+    async ({ runnerId, documentType }, thunkAPI) => {
         try {
-            const response = await api.post(`/kyc/approve-document/${runnerId}`, body);
-            return { runnerId, ...response.data };
+            const response = await api.post(`/kyc/approve-document/${runnerId}`, { documentType });
+            return { runnerId, documentType, ...response.data };
         } catch (error) {
             return thunkAPI.rejectWithValue(
                 error.response?.data?.message || "Failed to approve document"
@@ -46,10 +51,10 @@ export const approveDocument = createAsyncThunk(
 
 export const rejectDocument = createAsyncThunk(
     "kycAdmin/rejectDocument",
-    async ({ runnerId, reason }, thunkAPI) => {
+    async ({ runnerId, documentType, reason }, thunkAPI) => {
         try {
-            const response = await api.post(`/kyc/reject-document/${runnerId}`, { reason });
-            return { runnerId, ...response.data };
+            const response = await api.post(`/kyc/reject-document/${runnerId}`, { documentType, reason });
+            return { runnerId, documentType, reason, ...response.data };
         } catch (error) {
             return thunkAPI.rejectWithValue(
                 error.response?.data?.message || "Failed to reject document"
@@ -60,9 +65,9 @@ export const rejectDocument = createAsyncThunk(
 
 export const approveSelfie = createAsyncThunk(
     "kycAdmin/approveSelfie",
-    async ({ runnerId, ...body }, thunkAPI) => {
+    async ({ runnerId }, thunkAPI) => {
         try {
-            const response = await api.post(`/kyc/approve-selfie/${runnerId}`, body);
+            const response = await api.post(`/kyc/approve-selfie/${runnerId}`, {});
             return { runnerId, ...response.data };
         } catch (error) {
             return thunkAPI.rejectWithValue(
@@ -77,7 +82,7 @@ export const rejectSelfie = createAsyncThunk(
     async ({ runnerId, reason }, thunkAPI) => {
         try {
             const response = await api.post(`/kyc/reject-selfie/${runnerId}`, { reason });
-            return { runnerId, ...response.data };
+            return { runnerId, reason, ...response.data };
         } catch (error) {
             return thunkAPI.rejectWithValue(
                 error.response?.data?.message || "Failed to reject selfie"
@@ -100,16 +105,47 @@ export const getVerifiedRunners = createAsyncThunk(
     }
 );
 
+// ── Helpers ───────────────────────────────────────────────
 const updateRunner = (runners, runnerId, patch) =>
     runners.map(r => (r._id === runnerId || r.id === runnerId) ? { ...r, ...patch } : r);
+
+// ✅ Deep-update a specific document's status inside selectedRunner.documents
+const updateDocumentStatus = (selectedRunner, documentType, status) => {
+    if (!selectedRunner) return selectedRunner;
+    return {
+        ...selectedRunner,
+        documents: {
+            ...selectedRunner.documents,
+            [documentType]: {
+                ...(selectedRunner.documents?.[documentType] || {}),
+                status,
+                // also update verified flag for visual feedback
+                verified: status === 'approved',
+            },
+        },
+    };
+};
+
+// ✅ Deep-update biometrics status inside selectedRunner
+const updateBiometricsStatus = (selectedRunner, status) => {
+    if (!selectedRunner) return selectedRunner;
+    return {
+        ...selectedRunner,
+        biometrics: {
+            ...(selectedRunner.biometrics || {}),
+            status,
+            selfieVerified: status === 'approved',
+        },
+    };
+};
 
 const kycAdminSlice = createSlice({
     name: "kycAdmin",
     initialState: {
-        status: "idle",
-        error: "",
+        status:         "idle",
+        error:          "",
         pendingRunners: [],
-        totalPending: 0,
+        totalPending:   0,
         verifiedRunners: [],
         selectedRunner: null,
     },
@@ -119,89 +155,144 @@ const kycAdminSlice = createSlice({
         },
     },
     extraReducers: (builder) => {
-        const pending = (state) => { state.status = "loading"; state.error = ""; };
+        const pending  = (state) => { state.status = "loading"; state.error = ""; };
         const rejected = (state, action) => {
             state.status = "failed";
-            state.error = action.payload || action.error?.message || "Something went wrong";
+            state.error  = action.payload || action.error?.message || "Something went wrong";
         };
 
         builder
+            // ── getPendingKYC ─────────────────────────────
             .addCase(getPendingKYC.pending, pending)
             .addCase(getPendingKYC.fulfilled, (state, action) => {
-                console.log('payload in reducer:', action.payload);
-                state.status = "succeeded";
-                //const data = action.payload?.data || action.payload;
-                state.pendingRunners = (action.payload.runners ?? []).map(r => ({
-        ...r,
-        _id: r._id || r.id,
-    }));
-                state.totalPending = state.pendingRunners.length;
-                console.log('pendingRunners saved:', state.pendingRunners);
+                state.status        = "succeeded";
+                state.pendingRunners = (action.payload.runners ?? []).map(normalize);
+                state.totalPending   = action.payload.total ?? 0;
             })
             .addCase(getPendingKYC.rejected, rejected)
 
+            // ── getRunnerKYCDetails ───────────────────────
             .addCase(getRunnerKYCDetails.pending, pending)
             .addCase(getRunnerKYCDetails.fulfilled, (state, action) => {
                 state.status = "succeeded";
                 const runner = action.payload.runner ?? action.payload.data ?? action.payload;
-                  state.selectedRunner = { ...runner, _id: runner._id || runner.id };
+                state.selectedRunner = normalize(runner);
             })
             .addCase(getRunnerKYCDetails.rejected, rejected)
 
+            // ── approveDocument ───────────────────────────
             .addCase(approveDocument.pending, pending)
             .addCase(approveDocument.fulfilled, (state, action) => {
                 state.status = "succeeded";
-                const { runnerId } = action.payload;
-                state.pendingRunners = updateRunner(state.pendingRunners, runnerId, { documentStatus: "approved" });
-                if (state.selectedRunner?._id === runnerId || state.selectedRunner?.id === runnerId) {
-                    state.selectedRunner = { ...state.selectedRunner, documentStatus: "approved" };
+                const { runnerId, documentType, runnerStatus } = action.payload;
+
+                // Update list row
+                state.pendingRunners = updateRunner(
+                    state.pendingRunners, runnerId,
+                    { runnerStatus: runnerStatus || state.selectedRunner?.runnerStatus }
+                );
+
+                // ✅ Update the nested document status so VerifCard re-renders
+                if (state.selectedRunner?._id === runnerId) {
+                    state.selectedRunner = updateDocumentStatus(
+                        state.selectedRunner, documentType, 'approved'
+                    );
+                    if (runnerStatus) {
+                        state.selectedRunner.runnerStatus = runnerStatus;
+                    }
                 }
             })
             .addCase(approveDocument.rejected, rejected)
 
+            // ── rejectDocument ────────────────────────────
             .addCase(rejectDocument.pending, pending)
             .addCase(rejectDocument.fulfilled, (state, action) => {
                 state.status = "succeeded";
-                const { runnerId } = action.payload;
-                state.pendingRunners = updateRunner(state.pendingRunners, runnerId, { documentStatus: "rejected" });
-                if (state.selectedRunner?._id === runnerId || state.selectedRunner?.id === runnerId) {
-                    state.selectedRunner = { ...state.selectedRunner, documentStatus: "rejected" };
+                const { runnerId, documentType, reason, runnerStatus } = action.payload;
+
+                state.pendingRunners = updateRunner(
+                    state.pendingRunners, runnerId,
+                    { runnerStatus: runnerStatus || state.selectedRunner?.runnerStatus }
+                );
+
+                // ✅ Update the nested document status + store rejection reason
+                if (state.selectedRunner?._id === runnerId) {
+                    state.selectedRunner = {
+                        ...updateDocumentStatus(state.selectedRunner, documentType, 'rejected'),
+                        documents: {
+                            ...state.selectedRunner.documents,
+                            [documentType]: {
+                                ...(state.selectedRunner.documents?.[documentType] || {}),
+                                status:          'rejected',
+                                verified:        false,
+                                rejectionReason: reason,
+                            },
+                        },
+                    };
+                    if (runnerStatus) {
+                        state.selectedRunner.runnerStatus = runnerStatus;
+                    }
                 }
             })
             .addCase(rejectDocument.rejected, rejected)
 
+            // ── approveSelfie ─────────────────────────────
             .addCase(approveSelfie.pending, pending)
             .addCase(approveSelfie.fulfilled, (state, action) => {
                 state.status = "succeeded";
-                const { runnerId } = action.payload;
-                state.pendingRunners = updateRunner(state.pendingRunners, runnerId, { selfieStatus: "approved" });
-                if (state.selectedRunner?._id === runnerId || state.selectedRunner?.id === runnerId) {
-                    state.selectedRunner = { ...state.selectedRunner, selfieStatus: "approved" };
+                const { runnerId, runnerStatus } = action.payload;
+
+                state.pendingRunners = updateRunner(
+                    state.pendingRunners, runnerId,
+                    { runnerStatus: runnerStatus || state.selectedRunner?.runnerStatus }
+                );
+
+                // ✅ Update biometrics status so selfie VerifCard re-renders
+                if (state.selectedRunner?._id === runnerId) {
+                    state.selectedRunner = updateBiometricsStatus(state.selectedRunner, 'approved');
+                    if (runnerStatus) {
+                        state.selectedRunner.runnerStatus = runnerStatus;
+                    }
                 }
             })
             .addCase(approveSelfie.rejected, rejected)
 
+            // ── rejectSelfie ──────────────────────────────
             .addCase(rejectSelfie.pending, pending)
             .addCase(rejectSelfie.fulfilled, (state, action) => {
                 state.status = "succeeded";
-                const { runnerId } = action.payload;
-                state.pendingRunners = updateRunner(state.pendingRunners, runnerId, { selfieStatus: "rejected" });
-                if (state.selectedRunner?._id === runnerId || state.selectedRunner?.id === runnerId) {
-                    state.selectedRunner = { ...state.selectedRunner, selfieStatus: "rejected" };
+                const { runnerId, reason, runnerStatus } = action.payload;
+
+                state.pendingRunners = updateRunner(
+                    state.pendingRunners, runnerId,
+                    { runnerStatus: runnerStatus || state.selectedRunner?.runnerStatus }
+                );
+
+                // ✅ Update biometrics status + store rejection reason
+                if (state.selectedRunner?._id === runnerId) {
+                    state.selectedRunner = {
+                        ...updateBiometricsStatus(state.selectedRunner, 'rejected'),
+                        biometrics: {
+                            ...(state.selectedRunner.biometrics || {}),
+                            status:          'rejected',
+                            selfieVerified:  false,
+                            rejectionReason: reason,
+                        },
+                    };
+                    if (runnerStatus) {
+                        state.selectedRunner.runnerStatus = runnerStatus;
+                    }
                 }
             })
             .addCase(rejectSelfie.rejected, rejected)
 
+            // ── getVerifiedRunners ────────────────────────
             .addCase(getVerifiedRunners.pending, pending)
             .addCase(getVerifiedRunners.fulfilled, (state, action) => {
-                state.status = "succeeded";
-                state.verifiedRunners = (action.payload.runners ?? []).map(r => ({
-                ...r,
-                _id: r._id || r.id,
-            }));
+                state.status         = "succeeded";
+                state.verifiedRunners = (action.payload.runners ?? []).map(normalize);
             })
-            .addCase(getVerifiedRunners.rejected, rejected)
-            
+            .addCase(getVerifiedRunners.rejected, rejected);
     },
 });
 
