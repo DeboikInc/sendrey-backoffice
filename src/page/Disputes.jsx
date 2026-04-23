@@ -1,7 +1,10 @@
 // pages/Disputes.jsx
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { getAllDisputes, resolveDispute } from '../Redux/disputeSlice';
+import {
+    getAllDisputes, resolveDispute,
+    setSelectedDispute, clearSelectedDispute, clearResolveStatus,
+} from '../Redux/disputeSlice';
 import {
     getCancelledEscrows, getEscrowDetails,
     refundToWallet, clearSelectedEscrow, clearRefundStatus
@@ -21,15 +24,180 @@ function InfoRow({ label, value }) {
     );
 }
 
+const OUTCOMES = [
+    { value: 'full_refund', label: 'Full Refund to Customer', desc: '100% back to user wallet' },
+    { value: 'full_release', label: 'Full Release to Runner', desc: '100% released to runner' },
+    { value: 'partial_refund', label: 'Partial Refund', desc: 'Split — set % for user' },
+    { value: 'partial_release', label: 'Partial Release', desc: 'Split — set % for runner' },
+];
+
+function ResolveModal({ dispute, onClose, resolveStatus, resolveError }) {
+    const dispatch = useDispatch();
+    const [outcome, setOutcome] = useState('');
+    const [percent, setPercent] = useState(50);
+    const [note, setNote] = useState('');
+    const isLoading = resolveStatus === 'loading';
+    const isPartial = outcome === 'partial_refund' || outcome === 'partial_release';
+
+    const user = dispute.userId || {};
+    const runner = dispute.runnerId || {};
+
+    const handleSubmit = () => {
+        if (!outcome) return;
+        dispatch(resolveDispute({
+            disputeId: dispute.disputeId,
+            resolutionData: {
+                outcome,
+                releasePercentage: isPartial ? percent : undefined,
+                adminNote: note,
+            },
+        }));
+    };
+
+    useEffect(() => {
+        if (resolveStatus === 'succeeded') {
+            setTimeout(() => {
+                dispatch(clearResolveStatus());
+                onClose();
+            }, 1500);
+        }
+    }, [resolveStatus, dispatch, onClose]);
+
+    return (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+            <div className="w-full sm:max-w-lg max-h-[92vh] flex flex-col rounded-t-2xl sm:rounded-2xl border border-white/10 bg-black-100 overflow-hidden">
+
+                {/* Header */}
+                <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 shrink-0">
+                    <div>
+                        <h2 className="text-white font-bold text-sm flex items-center gap-2">
+                            Resolve Dispute
+                        </h2>
+                        <p className="text-white/40 text-[10px] font-mono mt-0.5">{dispute.disputeId}</p>
+                    </div>
+                    <button onClick={onClose} className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-white/50 hover:text-crimson transition-all">
+                        <X size={14} />
+                    </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-5 space-y-4" style={{ scrollbarWidth: 'none' }}>
+
+                    {/* Parties */}
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-black-200 rounded-xl border border-white/10 p-3">
+                            <p className="text-[10px] text-white/40 uppercase tracking-widest font-bold mb-1">Customer</p>
+                            <p className="text-sm text-white font-bold">
+                                {`${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email}
+                            </p>
+                            <p className="text-xs text-white/40 mt-0.5">{user.email}</p>
+                        </div>
+                        <div className="bg-black-200 rounded-xl border border-white/10 p-3">
+                            <p className="text-[10px] text-white/40 uppercase tracking-widest font-bold mb-1">Runner</p>
+                            <p className="text-sm text-white font-bold">{runner.firstName} {runner.lastName}</p>
+                            <p className="text-xs text-white/40 mt-0.5">{runner.email}</p>
+                        </div>
+                    </div>
+
+                    {/* Dispute reason */}
+                    <div className="bg-black-200 rounded-xl border border-white/10 p-4">
+                        <p className="text-[10px] text-white/40 uppercase tracking-widest font-bold mb-2">Dispute Details</p>
+                        <InfoRow label="Reason" value={dispute.reason} />
+                        <InfoRow label="Description" value={dispute.description} />
+                        <InfoRow label="Status" value={dispute.status} />
+                    </div>
+
+                    {/* Outcome selection */}
+                    <div className="space-y-2">
+                        <p className="text-[10px] text-white/40 uppercase tracking-widest font-bold">Resolution Outcome</p>
+                        {OUTCOMES.map(o => (
+                            <button
+                                key={o.value}
+                                onClick={() => setOutcome(o.value)}
+                                className={`w-full text-left px-4 py-3 rounded-xl border transition-all
+                                    ${outcome === o.value
+                                        ? 'bg-orange/10 border-orange/40'
+                                        : 'bg-black-200 border-white/10 hover:border-white/20'}`}
+                            >
+                                <p className={`text-sm font-bold ${outcome === o.value ? 'text-orange' : 'text-white'}`}>
+                                    {o.label}
+                                </p>
+                                <p className="text-xs text-white/40 mt-0.5">{o.desc}</p>
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Percentage slider for partial */}
+                    {isPartial && (
+                        <div className="bg-black-200 rounded-xl border border-white/10 p-4 space-y-3">
+                            <div className="flex justify-between items-center">
+                                <p className="text-xs text-white/50">
+                                    {outcome === 'partial_release' ? 'Runner gets' : 'Customer gets'}
+                                </p>
+                                <p className="text-sm text-white font-bold">{percent}%</p>
+                            </div>
+                            <input
+                                type="range" min="10" max="90" value={percent}
+                                onChange={e => setPercent(Number(e.target.value))}
+                                className="w-full accent-orange"
+                            />
+                            <div className="flex justify-between text-[10px] text-white/30">
+                                <span>Customer: {outcome === 'partial_release' ? 100 - percent : percent}%</span>
+                                <span>Runner: {outcome === 'partial_release' ? percent : 100 - percent}%</span>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Admin note */}
+                    <textarea
+                        value={note}
+                        onChange={e => setNote(e.target.value)}
+                        placeholder="Admin note (sent to both parties)..."
+                        rows={2}
+                        className="w-full bg-black-200 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/25 outline-none focus:border-orange/40 resize-none transition-colors"
+                    />
+
+                    {resolveError && (
+                        <p className="text-xs text-white bg-crimson/20 border border-crimson/30 px-3 py-2 rounded-lg">
+                            {resolveError}
+                        </p>
+                    )}
+
+                    {resolveStatus === 'succeeded' && (
+                        <p className="text-xs text-white bg-purple/20 border border-purple/30 px-3 py-2 rounded-lg flex items-center gap-2">
+                            <CheckCircle size={12} className="text-purple" /> Dispute resolved successfully
+                        </p>
+                    )}
+                </div>
+
+                <div className="px-5 py-4 border-t border-white/10 flex gap-3 shrink-0">
+                    <button onClick={onClose} className="flex-1 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-bold hover:border-white/20 transition-all">
+                        Cancel
+                    </button>
+                    <button
+                        onClick={handleSubmit}
+                        disabled={!outcome || isLoading}
+                        className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-orange text-white text-sm font-bold hover:bg-orange/80 disabled:opacity-40 transition-all"
+                    >
+                        {isLoading
+                            ? <><RefreshCw size={13} className="animate-spin" /> Resolving...</>
+                            : <> Confirm Resolution</>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 // ── Escrow detail modal ───────────────────────────────────
 function EscrowModal({ escrow, onClose, onRefund, refundStatus, refundError }) {
     const [reason, setReason] = useState('');
     const isRefunded = escrow.status === 'refunded';
-    const isLoading  = refundStatus === 'loading';
+    const isLoading = refundStatus === 'loading';
 
-    const user   = escrow.userId   || {};
+    const user = escrow.userId || {};
     const runner = escrow.runnerId || {};
-    const order  = escrow.orderId  || {};
+    const order = escrow.orderId || {};
 
     return (
         <div className="fixed inset-0 bg-black-200/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
@@ -61,7 +229,7 @@ function EscrowModal({ escrow, onClose, onRefund, refundStatus, refundError }) {
                             : 'bg-orange/10 border-orange/30'}`}>
                         {isRefunded
                             ? <CheckCircle size={14} className="text-purple shrink-0" />
-                            : <ShieldAlert  size={14} className="text-orange shrink-0" />}
+                            : <ShieldAlert size={14} className="text-orange shrink-0" />}
                         <span className={`text-xs font-bold uppercase tracking-wide ${isRefunded ? 'text-white' : 'text-white'}`}>
                             {isRefunded ? 'Already Refunded' : 'Pending Refund'}
                         </span>
@@ -70,10 +238,10 @@ function EscrowModal({ escrow, onClose, onRefund, refundStatus, refundError }) {
                     {/* Financials */}
                     <div className="bg-black-200 rounded-xl border border-white/10 p-4">
                         <p className="text-[10px] text-white/40 uppercase tracking-widest font-bold mb-3">Financials</p>
-                        <InfoRow label="Total Amount"  value={`₦${escrow.totalAmount?.toLocaleString()}`} />
-                        <InfoRow label="Item Budget"   value={`₦${escrow.itemBudget?.toLocaleString()}`} />
-                        <InfoRow label="Delivery Fee"  value={`₦${escrow.deliveryFee?.toLocaleString()}`} />
-                        <InfoRow label="Platform Fee"  value={`₦${escrow.platformFee?.toLocaleString()}`} />
+                        <InfoRow label="Total Amount" value={`₦${escrow.totalAmount?.toLocaleString()}`} />
+                        <InfoRow label="Item Budget" value={`₦${escrow.itemBudget?.toLocaleString()}`} />
+                        <InfoRow label="Delivery Fee" value={`₦${escrow.deliveryFee?.toLocaleString()}`} />
+                        <InfoRow label="Platform Fee" value={`₦${escrow.platformFee?.toLocaleString()}`} />
                         <InfoRow label="Runner Payout" value={`₦${escrow.runnerPayout?.toLocaleString()}`} />
                     </div>
 
@@ -96,12 +264,12 @@ function EscrowModal({ escrow, onClose, onRefund, refundStatus, refundError }) {
                     {/* Order info */}
                     <div className="bg-black-200 rounded-xl border border-white/10 p-4">
                         <p className="text-[10px] text-white/40 uppercase tracking-widest font-bold mb-3">Order Info</p>
-                        <InfoRow label="Task Type"     value={escrow.taskType} />
-                        <InfoRow label="Order Status"  value={order.status} />
+                        <InfoRow label="Task Type" value={escrow.taskType} />
+                        <InfoRow label="Order Status" value={order.status} />
                         <InfoRow label="Cancel Reason" value={order.cancellationReason} />
-                        <InfoRow label="Cancelled By"  value={order.cancelledBy} />
+                        <InfoRow label="Cancelled By" value={order.cancelledBy} />
                         <InfoRow label="Escrow Status" value={escrow.status} />
-                        <InfoRow label="Created"       value={new Date(escrow.createdAt).toLocaleString()} />
+                        <InfoRow label="Created" value={new Date(escrow.createdAt).toLocaleString()} />
                     </div>
 
                     {/* Refund action */}
@@ -127,7 +295,7 @@ function EscrowModal({ escrow, onClose, onRefund, refundStatus, refundError }) {
                             >
                                 {isLoading
                                     ? <><RefreshCw size={14} className="animate-spin" /> Processing...</>
-                                    : <><Wallet size={14} /> Refund ₦{escrow.totalAmount?.toLocaleString()} to Wallet</>
+                                    : <><Wallet size={14} /> Refund ₦{escrow.totalAmount?.toLocaleString()} to <p className="text-sm text-white font-bold">{user.firstName} {user.lastName}</p> Wallet</>
                                 }
                             </button>
                         </div>
@@ -166,8 +334,8 @@ function EscrowModal({ escrow, onClose, onRefund, refundStatus, refundError }) {
 
 // ── Escrow row card ───────────────────────────────────────
 function EscrowRow({ escrow, onReview }) {
-    const user     = escrow.userId  || {};
-    const order    = escrow.orderId || {};
+    const user = escrow.userId || {};
+    const order = escrow.orderId || {};
     const isRefunded = escrow.status === 'refunded';
 
     return (
@@ -249,8 +417,10 @@ function EscrowRow({ escrow, onReview }) {
 export default function Disputes() {
     const dispatch = useDispatch();
 
-    const { list: rawList, loading: dLoading = false, error: dError = null } =
-        useSelector(state => state.dispute || {});
+    const {
+        list: rawList, loading: dLoading = false, error: dError = null,
+        selectedDispute, resolveStatus, resolveError,
+    } = useSelector(state => state.dispute || {});
     const disputeList = Array.isArray(rawList) ? rawList : [];
 
     const {
@@ -258,8 +428,8 @@ export default function Disputes() {
         selectedEscrow, status: eStatus, refundStatus, refundError,
     } = useSelector(state => state.escrow || {});
 
-    const [tab, setTab]               = useState('disputes');
-    const [filter, setFilter]         = useState('All');
+    const [tab, setTab] = useState('disputes');
+    const [filter, setFilter] = useState('All');
     const [refreshing, setRefreshing] = useState(false);
 
     useEffect(() => {
@@ -283,21 +453,19 @@ export default function Disputes() {
         }
     };
 
-    const handleResolve = (disputeId) => {
-        const resolution = window.prompt("Enter resolution notes (e.g., 'Refund Issued'):");
-        if (resolution) {
-            dispatch(resolveDispute({ disputeId, resolutionData: { status: 'Resolved', notes: resolution } }));
-        }
-    };
-
-    const filteredDisputes = disputeList.filter(d =>
-        filter === 'All' ? true : d.status === filter
-    );
+    const filteredDisputes = disputeList.filter(d => {
+        if (filter === 'All') return true;
+        if (filter === 'Pending') return d.status === 'open' || d.status === 'pending' || d.status === 'under_review';
+        if (filter === 'Resolved') return d.status === 'resolved';
+        return true;
+    });
 
     const pendingEscrows = escrowList.filter(e => e.status !== 'refunded');
-    const allEscrows     = [...escrowList, ...refunded];
+    const allEscrows = [...escrowList, ...refunded];
 
-    const pendingDisputeCount = disputeList.filter(d => d.status === 'Pending').length;
+    const pendingDisputeCount = disputeList.filter(d =>
+        d.status === 'open' || d.status === 'pending' || d.status === 'under_review'
+    ).length;
 
     return (
         <div className="px-4 sm:px-6 py-8 space-y-6 min-h-full">
@@ -391,68 +559,92 @@ export default function Disputes() {
                     )}
 
                     <div className="grid gap-4">
-                        {filteredDisputes.map(dispute => (
-                            <div
-                                key={dispute._id}
-                                className="bg-white/[0.03] border border-white/10 rounded-2xl p-5 hover:border-orange/30 transition-all"
-                            >
-                                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
-                                    <div className="flex gap-4">
-                                        {/* Icon */}
-                                        <div className={`p-3 rounded-xl shrink-0
-                                            ${dispute.status === 'Pending'
-                                                ? 'bg-crimson/10 text-crimson'
-                                                : 'bg-purple/10 text-purple'}`}>
-                                            <AlertTriangle size={22} />
+                        {filteredDisputes.map(dispute => {
+                            // ── FIX: use populated userId/runnerId ──────────
+                            const initiator = dispute.initiatedByModel === 'User'
+                                ? dispute.userId
+                                : dispute.runnerId;
+                            const respondent = dispute.initiatedByModel === 'User'
+                                ? dispute.runnerId
+                                : dispute.userId;
+
+                            const initiatorName = initiator
+                                ? `${initiator.firstName || ''} ${initiator.lastName || ''}`.trim() || initiator.email
+                                : 'Unknown';
+
+                            const respondentName = respondent
+                                ? `${respondent.firstName || ''} ${respondent.lastName || ''}`.trim() || respondent.email
+                                : 'Unknown';
+
+                            const isPending = dispute.status === 'open' || dispute.status === 'Pending';
+
+                            return (
+                                <div
+                                    key={dispute._id}
+                                    className="bg-white/[0.03] border border-white/10 rounded-2xl p-5 hover:border-orange/30 transition-all"
+                                >
+                                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+                                        <div className="flex gap-4">
+                                            <div className={`p-3 rounded-xl shrink-0
+                                                ${isPending ? 'bg-crimson/10 text-crimson' : 'bg-purple/10 text-purple'}`}>
+                                                <AlertTriangle size={22} />
+                                            </div>
+                                            <div>
+                                                <div className="flex flex-wrap items-center gap-2 mb-1">
+                                                    <h3 className="text-white font-bold text-base">
+                                                        {dispute.reason || 'Order Issue'}
+                                                    </h3>
+                                                    <span className="text-[10px] bg-white/5 border border-white/10 px-2 py-0.5 rounded text-white/50 font-mono">
+                                                        {dispute.orderId}
+                                                    </span>
+                                                    <span className={`text-[10px] font-bold uppercase px-2.5 py-1 rounded-full border
+                                                        ${isPending
+                                                            ? 'text-white bg-crimson/20 border-crimson/30'
+                                                            : 'text-white bg-purple/20 border-purple/30'}`}>
+                                                        {dispute.status}
+                                                    </span>
+                                                </div>
+
+
+                                                <p className="text-sm text-white/50 mt-1">
+                                                    Raised by{' '}
+                                                    <span className="text-white font-medium">{initiatorName}</span>
+                                                    {' '}against{' '}
+                                                    <span className="text-white font-medium">{respondentName}</span>
+                                                </p>
+
+                                                <div className="flex flex-wrap items-center gap-4 mt-3 text-xs text-white/40">
+                                                    <span className="flex items-center gap-1.5">
+                                                        <Clock size={12} />
+                                                        {new Date(dispute.createdAt).toLocaleDateString()}
+                                                    </span>
+                                                    <span className="flex items-center gap-1.5 text-royal">
+                                                        <MessageSquare size={12} />
+                                                        {dispute.messages?.length || 0} messages
+                                                    </span>
+                                                </div>
+                                            </div>
                                         </div>
 
-                                        {/* Info */}
-                                        <div>
-                                            <div className="flex flex-wrap items-center gap-2 mb-1">
-                                                <h3 className="text-white font-bold text-base">
-                                                    {dispute.type || 'Order Issue'}
-                                                </h3>
-                                                <span className="text-[10px] bg-white/5 border border-white/10 px-2 py-0.5 rounded text-white/50 font-mono">
-                                                    {dispute.orderId}
-                                                </span>
-                                            </div>
-                                            <p className="text-sm text-white/50 mt-1">
-                                                Raised by{' '}
-                                                <span className="text-white font-medium">{dispute.reporterName}</span>
-                                                {' '}against{' '}
-                                                <span className="text-white font-medium">{dispute.againstName}</span>
-                                            </p>
-                                            <div className="flex flex-wrap items-center gap-4 mt-3 text-xs text-white/40">
-                                                <span className="flex items-center gap-1.5">
-                                                    <Clock size={12} /> {dispute.createdAt}
-                                                </span>
-                                                <span className="flex items-center gap-1.5 text-royal">
-                                                    <MessageSquare size={12} />
-                                                    {dispute.messagesCount || 0} messages
-                                                </span>
-                                            </div>
+                                        <div className="shrink-0">
+                                            {isPending && (
+                                                <button
+                                                    onClick={() => dispatch(setSelectedDispute(dispute))}
+                                                    className="bg-orange text-white px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-orange/80 transition-all"
+                                                >
+                                                    Resolve Case
+                                                </button>
+                                            )}
+                                            {!isPending && (
+                                                <div className="flex items-center gap-1.5 text-purple text-xs font-bold">
+                                                    <CheckCircle size={15} /> Resolved
+                                                </div>
+                                            )}
                                         </div>
-                                    </div>
-
-                                    {/* Action */}
-                                    <div className="shrink-0">
-                                        {dispute.status === 'Pending' && (
-                                            <button
-                                                onClick={() => handleResolve(dispute._id)}
-                                                className="bg-orange text-white px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-orange/80 transition-all"
-                                            >
-                                                Resolve Case
-                                            </button>
-                                        )}
-                                        {dispute.status === 'Resolved' && (
-                                            <div className="flex items-center gap-1.5 text-purple text-xs font-bold">
-                                                <CheckCircle size={15} /> Resolved
-                                            </div>
-                                        )}
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </>
             )}
@@ -536,6 +728,18 @@ export default function Disputes() {
                     }))}
                     refundStatus={refundStatus}
                     refundError={refundError}
+                />
+            )}
+
+            {selectedDispute && (
+                <ResolveModal
+                    dispute={selectedDispute}
+                    onClose={() => {
+                        dispatch(clearSelectedDispute());
+                        dispatch(clearResolveStatus());
+                    }}
+                    resolveStatus={resolveStatus}
+                    resolveError={resolveError}
                 />
             )}
         </div>
